@@ -26,9 +26,6 @@ class DCM_DATABASE:
 
         self.DCM_objects = DCM_objects
 
-        # Dictionary containing each slice locations corresponding index (for our use) Ex: (-51.33: 0, -48.23: 1, etc...)
-        self.slice_index_per_location = self.derive_slice_indices_per_location()
-        self.location_per_slice_index = {v: k for k, v in self.slice_index_per_location.items()}
         # How many complete scans through brain at different time points
         self.number_of_timestamps = self.derive_number_of_timestamps()
 
@@ -47,29 +44,16 @@ class DCM_DATABASE:
         for dcm in self.DCM_objects:
             unique_timestamps.add(dcm.timestamp)
         return len(unique_timestamps)
-    # Matches every unique slice location to an index so we can use '0..23' instead of [-51.34, -48.23, ...]
-    # Assumes matching slices will have exactly same location!
-    def derive_slice_indices_per_location(self):
-        slice_indices = dict()
-        counter = 0
-        for dcm in self.DCM_objects:
-            slice_location = dcm.slice_location
 
-            # Index only gets assigned once to a slice location
-            if slice_location in slice_indices:
-                continue
-            else:
-                slice_indices[slice_location] = counter
-                counter += 1
-        return slice_indices
 
     def get_specific_image(self, slice_location, timestamp):
         for dcm in self.DCM_objects:
-            if self.location_per_slice_index[dcm.slice_location] == slice_location and dcm.timestamp == timestamp:
+            if dcm.slice_location == slice_location and dcm.timestamp == timestamp:
                 return dcm
 
     def get_DCMS_per_time_series():
         return False
+
 
 # Folders with ".dcm" files
 DSC_DIRECTORY = "PERFUSION"
@@ -120,10 +104,6 @@ print("RAPID-modified DCM Files", RAPID_database.size())
 # List of each dicom's pixel data in one database
 all_pixel_data = [dcm.pixel_data for dcm in DSC_database.getDCM_objects()]
 #print(all_pixel_data)
-
-# Slice indices per location for one database
-print(RAPID_database.slice_index_per_location)
-print(DSC_database.location_per_slice_index)
 
 # Not implemented yet
 def return_training_data(control_database, rapid_database):
