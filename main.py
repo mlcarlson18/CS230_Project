@@ -18,7 +18,7 @@ class DCM:
         # Patient ID
         self.patient_identifier = patient_identifier
 
-# Class for a DCM database (not implemented yet)
+# Class for a DCM database
 class DCM_DATABASE:
     def __init__(self, DCM_objects):
 
