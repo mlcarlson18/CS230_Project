@@ -26,6 +26,13 @@ class DCM_DATABASE:
 
         # Dictionary containing each slice locations corresponding index (for our use) Ex: (-51.33: 0, -48.23: 1, etc...)
         self.slice_index_per_location = self.derive_slice_indices_per_location()
+        self.location_per_slice_index = {v: k for k, v in self.slice_index_per_location.items()}
+        # How many complete scans through brain at different time points
+        self.number_of_timestamps = self.derive_number_of_timestamps()
+
+        # Shape of pixel data - assumes every image has same dimensions as first
+        self.pixel_width = self.DCM_objects[0].pixel_data.shape[0]
+        self.pixel_height = self.DCM_objects[0].pixel_data.shape[1]
 
     def getDCM_objects(self):
         return self.DCM_objects
@@ -33,6 +40,11 @@ class DCM_DATABASE:
     def size(self):
         return len(self.DCM_objects)
 
+    def derive_number_of_timestamps(self):
+        unique_timestamps = set()
+        for dcm in self.DCM_objects:
+            unique_timestamps.add(dcm.timestamp)
+        return len(unique_timestamps)
     # Matches every unique slice location to an index so we can use '0..23' instead of [-51.34, -48.23, ...]
     # Assumes matching slices will have exactly same location!
     def derive_slice_indices_per_location(self):
@@ -49,8 +61,10 @@ class DCM_DATABASE:
                 counter += 1
         return slice_indices
 
-    def get_DCMS_per_slice_number():
-        return False
+    def get_specific_image(self, slice_location, timestamp):
+        for dcm in self.DCM_objects:
+            if self.location_per_slice_index[dcm.slice_location] == slice_location and dcm.timestamp == timestamp:
+                return dcm
 
     def get_DCMS_per_time_series():
         return False
@@ -75,7 +89,6 @@ def traverse_directory(dir):
 
 DSC_files = traverse_directory(DSC_DIRECTORY)
 RAPID_files = traverse_directory(RAPID_DIRECTORY)
-
 
 # Converting list of files into database with DCM type
 def create_database(image_files):
@@ -108,6 +121,41 @@ all_pixel_data = [dcm.pixel_data for dcm in DSC_database.getDCM_objects()]
 
 # Slice indices per location for one database
 print(RAPID_database.slice_index_per_location)
+print(DSC_database.location_per_slice_index)
+
+# Not implemented yet
+def return_training_data(control_database, rapid_database):
+    train_DCMs = [dcm.pixel_data for dcm in control_database.getDCM_objects()]
+    train_X = dict()
+    test_x = dict()
+
+    for slice in range(slices_per_timestamp):
+        train_X[slice] = dict()
+        test_x[slice] = dict()
+        slice_data = np.zeros((control_database.pixel_width, control_database.pixel_height))
+        for time in range(control_database.number_of_timestamps):
+            dcm_control = control_database.get_specific_image(slice, time)
+            dcm_rapid = rapid_database.get_specific_image(slice, time)
+            for width in range(control_database.pixel_width):
+                for height in range(control_database.pixel_height):
+                    if (width, height) in train_X[slice]:
+                        train_X[slice][(width, height)].append(dcm_control.pixel_data[width][height])
+                    else:
+                        train_X[slice][(width, height)] = [dcm_control.pixel_data[width][height]]
+                    if (width, height) in test_X[slice]:
+                        test_X[slice][(width, height)].append(dcm_rapid.pixel_data[width][height])
+                    else:
+                        test_X[slice][(width, height)] = [dcm_rapid.pixel_data[width][height]]
+
+    return train_X, test_X
+
+print(return_training_data(DSC_database, RAPID_database))
+
+
+
+
+
+
 
 
 
