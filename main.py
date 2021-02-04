@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+# test comment
+
 # Class representing one dicom file
 class DCM:
     def __init__(self, filename, pixel_data, slice_location, timestamp, patient_identifier):
