@@ -3,57 +3,14 @@ import pydicom as dicom
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from models import models
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import cross_val_score
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
 
-# test comment
-
-# Class representing one dicom file
-class DCM:
-    def __init__(self, filename, pixel_data, slice_location, timestamp, patient_identifier):
-        # Filename including directory of .dcm file
-        self.filename = filename
-        # 2D Array (256x256) of pixel data
-        self.pixel_data = pixel_data
-        # Slice location in z axis
-        self.slice_location = slice_location
-        # Timestamp (0...x) referring to which scan in time dcm file refers to
-        self.timestamp = timestamp
-        # Patient ID
-        self.patient_identifier = patient_identifier
-
-# Class for a DCM database
-class DCM_DATABASE:
-    def __init__(self, DCM_objects):
-
-        self.DCM_objects = DCM_objects
-
-        # How many complete scans through brain at different time points
-        self.number_of_timestamps = self.derive_number_of_timestamps()
-
-        # Shape of pixel data - assumes every image has same dimensions as first
-        self.pixel_width = self.DCM_objects[0].pixel_data.shape[0]
-        self.pixel_height = self.DCM_objects[0].pixel_data.shape[1]
-
-    def getDCM_objects(self):
-        return self.DCM_objects
-
-    def size(self):
-        return len(self.DCM_objects)
-
-    def derive_number_of_timestamps(self):
-        unique_timestamps = set()
-        for dcm in self.DCM_objects:
-            unique_timestamps.add(dcm.timestamp)
-        return len(unique_timestamps)
-
-
-    def get_specific_image(self, slice_location, timestamp):
-        for dcm in self.DCM_objects:
-            if dcm.slice_location == slice_location and dcm.timestamp == timestamp:
-                return dcm
-
-    def get_DCMS_per_time_series():
-        return False
-
+from DCM_Structure import DCM, DCM_DATABASE
 
 # Folders with ".dcm" files
 DSC_DIRECTORY = "PERFUSION"
@@ -77,69 +34,138 @@ DSC_files = traverse_directory(DSC_DIRECTORY)
 RAPID_files = traverse_directory(RAPID_DIRECTORY)
 
 # Converting list of files into database with DCM type
-def create_database(image_files):
+def create_database(image_files, rapid=False):
     dcm_objects = []
     counter = 0 #Used to calculate which timestamp each belongs to
     for filename in image_files:
+
         # Extract dcm data from file
         ds = dicom.dcmread(filename)
 
+        #Slice number - rapid does not contain same information since only one set of slices
+        slice_number = counter + 1 if rapid else ds['InStackPositionNumber'].value
+
+        # Timestamp - rapid only has one 'time' so will always be 0
+        timestamp = 0 if rapid else np.round(ds.InstanceNumber / slices_per_timestamp)
+
         # Create DCM class with data of interest
-        d = DCM(filename,ds.pixel_array, ds.SliceLocation, np.round(ds.InstanceNumber / slices_per_timestamp), ds.PatientName)
+        d = DCM(filename,ds.pixel_array, slice_number, timestamp, ds.PatientName)
 
         # Add DCM object to our database
         dcm_objects.append(d)
+
+        # Update counter
+        counter += 1
 
     # Create Database with dcm DCM_objects
     d = DCM_DATABASE(dcm_objects)
     # Return database
     return d
 
+print("Making databases...")
 DSC_database = create_database(DSC_files)
-RAPID_database = create_database(RAPID_files)
+RAPID_database = create_database(RAPID_files, rapid=True)
 
-print("Original DCM Files: ", DSC_database.size())
+print("Control DCM Files: ", DSC_database.size())
 print("RAPID-modified DCM Files", RAPID_database.size())
 
-# List of each dicom's pixel data in one database
-all_pixel_data = [dcm.pixel_data for dcm in DSC_database.getDCM_objects()]
-#print(all_pixel_data)
+# Divide the two databases into X and Y for running models; where X is DSC_Database, and y is Rapid_Database
+# One independent input is considered the exact pixel location of one type of slice.
+# There are 128 x 128 pixel locations, and 24 types of slices which means there are 128 x 128 x 24 = 393,218 independent inputs.
+# Each 393,218 input features consists of an array of size 60 from there being 60 timestamps
+"""
+This serves as a naive benchline performance, where neighboring pixels are viewed as independent, no knowledge of
+Tmax is used in the algorithm, and only basic ML implemented
+"""
+def extract_train_and_test_data(control_database, rapid_database):
 
-# Not implemented yet
-def return_training_data(control_database, rapid_database):
-    train_DCMs = [dcm.pixel_data for dcm in control_database.getDCM_objects()]
-    train_X = dict()
-    test_x = dict()
+    # Some files that don't have pixel data
+    lost_files = 0
 
-    for slice in range(slices_per_timestamp):
-        train_X[slice] = dict()
-        test_x[slice] = dict()
-        slice_data = np.zeros((control_database.pixel_width, control_database.pixel_height))
-        for time in range(control_database.number_of_timestamps):
-            dcm_control = control_database.get_specific_image(slice, time)
-            dcm_rapid = rapid_database.get_specific_image(slice, time)
-            for width in range(control_database.pixel_width):
-                for height in range(control_database.pixel_height):
-                    if (width, height) in train_X[slice]:
-                        train_X[slice][(width, height)].append(dcm_control.pixel_data[width][height])
+    # X and y to train our model
+    X = dict()
+    y = dict()
+
+    # Iterating over Each pixel location specified by (width, height) key
+    # (128 x 128) images
+    for width in range(0,control_database.pixel_width):
+        for height in range(0,control_database.pixel_height):
+
+            # Iterating over Each slice (24 slice locations)
+            for slice in control_database.list_of_slices:
+
+                # RAPID file for specified slice
+                dcm_rapid = rapid_database.DCM_per_slice_and_time[slice, 0]
+
+                # Add (width, height) pixel information to data
+                if (width, height) in y:
+                    y[(width, height)].append([dcm_rapid.pixel_data[width][height]])
+                else:
+                    y[(width, height)] = [[dcm_rapid.pixel_data[width][height]]]
+
+                # Control pixel values for each time point for specified slice and (width, height)
+                values = []
+
+                # Iterating over each time stamp
+                for time in range(control_database.number_of_timestamps - 1):
+
+                    # Add pixel data for (width, height) of specified slice for each timestamp
+                    if (slice, time) in control_database.DCM_per_slice_and_time:
+                        dcm_control = control_database.DCM_per_slice_and_time[slice, time]
+                        values.append(dcm_control.pixel_data[width][height])
                     else:
-                        train_X[slice][(width, height)] = [dcm_control.pixel_data[width][height]]
-                    if (width, height) in test_X[slice]:
-                        test_X[slice][(width, height)].append(dcm_rapid.pixel_data[width][height])
-                    else:
-                        test_X[slice][(width, height)] = [dcm_rapid.pixel_data[width][height]]
+                        lost_files += 1
+                        values.append(float("nan"))
 
-    return train_X, test_X
+                # Add to X
+                if (width, height) in X:
+                    X[(width, height)].append(values)
+                else:
+                    X[(width, height)] = [values]
 
-print(return_training_data(DSC_database, RAPID_database))
+    lost_files /= 128 * 128
 
+    #print("Number of lost files after converting: ", lost_files)
 
+    # Process the X and y values
 
+    # Convert to numpy array
+    X_modified = np.array(list(X.values()))
+    y_modified = np.array(list(y.values()))
 
+    # Reshape to collapse pixel location and slice number
+    X_modified = X_modified.reshape(-1, X_modified.shape[-1])
+    y_modified = y_modified.reshape(-1, y_modified.shape[-1])
 
+    # Replace nan values with 0
+    X_nan_fixed = np.nan_to_num(X_modified)#SimpleImputer(missing_values=np.nan, strategy='mean').fit(X_modified)
+    Y_nan_fixed = np.nan_to_num(y_modified) #SimpleImputer(missing_values=np.nan, strategy='mean').fit(y_modified)
 
+    return X_nan_fixed, Y_nan_fixed
 
+# Training model
+print("Extracting X and Y for SKLEARN Models...")
+X, y = extract_train_and_test_data(DSC_database, RAPID_database)
 
+# Dividing data into train/test set (later we should do cross validation)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
 
+# SKLEARN specific formatting
+y_train = np.ravel(y_train)
+y_test = np.ravel(y_test)
 
+model_types = ["LogisticRegression", "LinearRegression","SVM"]
+
+score_messages = []
+for model_type in model_types:
+    print(model_type, " running...")
+    model = models(model_type) # Logistic Regression model
+    model.train(X_train, y_train)
+    result = model.evaluate(X_test, y_test)
+    print("Result: ", result)
+    score_messages.append(model_type + " | Score: " + str(result))
+
+print(score_messages)
+
+#print(model.cross_validate(X, y)) # Print cross evaluation score
 
