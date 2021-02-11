@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 class models():
     def __init__(self, model_type="LogisticRegression"):
         if model_type == "LogisticRegression":
-            self.model = LogisticRegression(max_iter = 200)
+            self.model = LogisticRegression(max_iter = 20)
         elif model_type == "LinearRegression":
             self.model = LinearRegression()
         elif model_type == "SVM":
@@ -20,7 +20,7 @@ class models():
     def train(self, X_train, y_train):
         self.model.fit(X_train, y_train)
 
-    def test(self, X_test):
+    def predict(self, X_test):
         return self.model.predict(X_test)
 
     def evaluate(self, X_test, y_test):
