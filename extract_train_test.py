@@ -75,9 +75,12 @@ class extract_train_test:
         X_modified = X_modified.reshape(-1, X_modified.shape[-1]) # (393216, 60)
         y_modified = y_modified.reshape(-1, y_modified.shape[-1]) # (393216, 1)
 
-        # Replace nan values with 0
-        X_nan_fixed = np.nan_to_num(X_modified)  # SimpleImputer(missing_values=np.nan, strategy='mean').fit(X_modified)
-        Y_nan_fixed = np.nan_to_num(y_modified)  # SimpleImputer(missing_values=np.nan, strategy='mean').fit(y_modified)
+        # Replace nan values with median pixel value
+
+        nan_pixel_value = np.nanmax(X_modified.copy().flatten())
+        print("NEW PIXEL VALUE: ", nan_pixel_value)
+        X_nan_fixed = np.nan_to_num(X_modified, nan=nan_pixel_value)  # SimpleImputer(missing_values=np.nan, strategy='mean').fit(X_modified)
+        Y_nan_fixed = np.nan_to_num(y_modified, nan=nan_pixel_value)  # SimpleImputer(missing_values=np.nan, strategy='mean').fit(y_modified)
 
         return X_nan_fixed, Y_nan_fixed
 

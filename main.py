@@ -83,7 +83,7 @@ plt.show()
 # Extracter class with built-in functions for visualizing and extracting information from database
 extracter = extract_train_test()
 
-# Visualizing X pixels in slice Y
+# Visualizing Time Series for set of Pixels
 """
 extracter.visualize_pixel_plot_per_slice(DSC_database, RAPID_database, num_pixels=150, slice_index=12)
 """
@@ -101,7 +101,7 @@ y_train = np.ravel(y_train)
 y_test = np.ravel(y_test)
 
 # Model types for evaluating model
-model_types = ["LogisticRegression", "LinearRegression","SVM"]
+model_types = ["LogisticRegression", "LinearRegression","SVM", "MultiLayerPerceptron"]
 
 # Evaluate several models performance
 evaluate_models = False
