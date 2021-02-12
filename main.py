@@ -12,6 +12,18 @@ from sklearn.preprocessing import StandardScaler
 from extract_train_test import extract_train_test
 
 from DCM_Structure import DCM, DCM_DATABASE
+from preprocessing import preprocessing
+
+############################# HYPER-PARAMETERS ##################################
+evaluate_models = False # Evaluate several models performance (takes a while)
+visualize_model = True # Visualize Logistic Regression's performance with images (or other model)
+preprocess_type = None #Default is None - no preprocessing
+assert (preprocess_type == None or preprocess_type == "log" or preprocess_type == "normalize")
+
+
+extracter = extract_train_test() # Extracting pixel information in various formats
+
+preprocesser = preprocessing() # Preprocesser class
 
 # Folders with ".dcm" files
 DSC_DIRECTORY = "PERFUSION"
@@ -49,8 +61,11 @@ def create_database(image_files, rapid=False):
         # Timestamp - rapid only has one 'time' so will always be 0
         timestamp = 0 if rapid else np.round(ds.InstanceNumber / slices_per_timestamp)
 
+        # Return dicom pixel array or pre-processed version
+        pixel_array = ds.pixel_array if preprocess_type == None else preprocesser.pixel_transform(preprocess_type, ds.pixel_array)
+
         # Create DCM class with data of interest
-        d = DCM(filename,ds.pixel_array, slice_number, timestamp, ds.PatientName)
+        d = DCM(filename,pixel_array, slice_number, timestamp, ds.PatientName)
 
         # Add DCM object to our database
         dcm_objects.append(d)
@@ -80,9 +95,6 @@ plt.imshow(RAPID_database.DCM_objects[18].pixel_data)
 plt.show()
 """
 
-# Extracter class with built-in functions for visualizing and extracting information from database
-extracter = extract_train_test()
-
 # Visualizing Time Series for set of Pixels
 """
 extracter.visualize_pixel_plot_per_slice(DSC_database, RAPID_database, num_pixels=150, slice_index=12)
@@ -102,12 +114,6 @@ y_test = np.ravel(y_test)
 
 # Model types for evaluating model
 model_types = ["LogisticRegression", "LinearRegression","SVM", "MultiLayerPerceptron"]
-
-# Evaluate several models performance
-evaluate_models = False
-
-# Visualize one models performance with images
-visualize_model = True
 
 # Evaluate performance of several models
 if evaluate_models:
