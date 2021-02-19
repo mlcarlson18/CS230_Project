@@ -5,5 +5,7 @@ Saving society from the evil wrath of RAPID
 Before running, make sure to download the following dependencies:
 - pip install pydicom
 - pip install numpy
+- pip install keras
+- pip install tensorflow
 
 Run main.py to execute
