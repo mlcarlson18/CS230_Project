@@ -2,10 +2,96 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
+from numpy import moveaxis
+
 
 class extract_train_test:
+
+
     def __init__(self):
         self.mode = 1
+        self.nan_pixel_value = 500
+
+    # Convert the DICOM Pixel Data to Numpy Array while Fixing NAN
+    def convert_pixel_array_to_numpy(self, x):
+
+        # Necessary variable for numpy array intialization
+        first_iteration = True
+        for i in x:
+            if first_iteration:
+                np_i = np.asarray(i).astype(np.float32)
+
+                # Isolate value to replace NaN with
+                self.nan_pixel_value = np.nanmax(np_i.copy().flatten()) if np.nanmax(np_i.copy().flatten()) > self.nan_pixel_value else self.nan_pixel_value
+                i_fixed = np.nan_to_num(np_i,
+                                            nan=self.nan_pixel_value)
+
+                to_return = i_fixed
+                first_iteration = False
+            else:
+                np_i = np.asarray(i).astype(np.float32)
+
+                # Isolate value to replace NaN with
+                i_fixed = np.nan_to_num(np_i,
+                                            nan=self.nan_pixel_value)
+
+                to_return = np.vstack((to_return, i_fixed))
+        return to_return
+
+
+    # Extracting X and Y For CNN architectures
+    def return_train_and_test_by_slice(self, control_database, rapid_database, for_visualization_purposes = False
+                                       ):
+        # X and y to train our model
+        X = dict()
+        y = dict()
+
+        # Iterating over Each slice (24 slice locations)
+        for slice in control_database.list_of_slices:
+
+            first_slice = True
+
+            # RAPID file for specified slice
+            y[slice] = rapid_database.DCM_per_slice_and_time[slice, 0].pixel_data
+
+            # Iterating over each time stamp
+            for time in range(control_database.number_of_timestamps - 1):
+
+                # Add pixel data for (width, height) of specified slice for each timestamp
+                if (slice, time) in control_database.DCM_per_slice_and_time:
+                    pixel_data = self.convert_pixel_array_to_numpy(control_database.DCM_per_slice_and_time[slice, time].pixel_data)
+                    if first_slice:
+                        values = np.array(pixel_data)
+                        first_slice = False
+                    else:
+                        values = np.vstack((values, pixel_data))
+                    #values = np.append(values, self.convert_pixel_array_to_numpy_array(control_database.DCM_per_slice_and_time[slice, time].pixel_data))
+                else:
+                    if first_slice:
+                        values = np.array(pixel_data)
+                        first_slice = False
+                    else:
+                        values = np.vstack((values, np.full((128, 128), self.nan_pixel_value))
+                                           )
+
+            X[slice] = values
+
+        X_retrieved = np.array(list(X.values())) #24, 60, 128, 128
+        y_retrieved = np.array(list(y.values())) #24, 128, 128
+
+        # Changing Shape to Desired
+        X_retrieved = X_retrieved.reshape(24,60, 128, 128)
+        X_retrieved = np.swapaxes(X_retrieved, 1, 2)
+        X_retrieved = np.swapaxes(X_retrieved, 2, 3)
+
+        y_retrieved = y_retrieved.reshape(24, 128, 128)
+        print("X Shape: ", X_retrieved.shape)
+        print("Y Shape: ", y_retrieved.shape)
+
+        return X_retrieved, y_retrieved
+
+
+
 
     # Divide the two databases into X and Y for running models; where X is DSC_Database, and y is Rapid_Database
     # One independent input is considered the exact pixel location of one type of slice.
@@ -16,7 +102,7 @@ class extract_train_test:
     Tmax is used in the algorithm, and only basic ML implemented
     """
 
-    def return_train_and_test(self, control_database, rapid_database, for_visualization_purposes = False):
+    def return_train_and_test_by_pixel(self, control_database, rapid_database, for_visualization_purposes = False):
 
         # Some files that don't have pixel data
         lost_files = 0
@@ -88,7 +174,7 @@ class extract_train_test:
     def visualize_pixel_plot_per_slice(self, control_database, rapid_database, num_pixels, slice_index):
 
         # Extract X
-        X = self.return_train_and_test(control_database, rapid_database, for_visualization_purposes=True)
+        X = self.return_train_and_test_by_pixel(control_database, rapid_database, for_visualization_purposes=True)
 
         plt.figure()
 

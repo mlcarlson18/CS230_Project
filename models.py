@@ -7,11 +7,13 @@ from sklearn.svm import SVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
+import matplotlib.pyplot as plt
+import numpy as np
 
-class models():
+class sklearn_models():
     def __init__(self, model_type="LogisticRegression"):
         if model_type == "LogisticRegression":
-            self.model = LogisticRegression(max_iter = 100)
+            self.model = LogisticRegression(max_iter = 50)
         elif model_type == "LinearRegression":
             self.model = LinearRegression()
         elif model_type == "SVM":
@@ -32,3 +34,45 @@ class models():
 
     def cross_validate(self, X, y, scoring_metric='neg_mean_squared_error', cross_validation = 3):
         return cross_val_score(self.model, X, y, cv=cross_validation, scoring=scoring_metric)
+
+    @staticmethod
+    def visualize_sklearn_model(X, y, model, DSC_database):
+        print("Visualizing Model...")
+        # Database that was used (not necessary to include this)
+        control_database = DSC_database
+
+        # Sklearn specific formatting
+        y = np.ravel(y)
+
+        model_result = model.predict(X)
+
+        # Reverting predictions back into image shapes for printing
+        y_reverted = y.reshape(16384, 24, 1)
+        y_reverted = y_reverted.reshape(128, 128, 24)
+
+        model_result_reverted = model_result.reshape(16384, 24, 1)
+        model_result_reverted = model_result_reverted.reshape(128, 128, 24)
+
+        # Initializing shape of plot for model
+        fig, axes = plt.subplots(4, 6)
+        axes = axes.ravel()
+        # Plotting Model Result
+        for i in range(24):
+            pixel_array = np.zeros((control_database.pixel_width, control_database.pixel_height))
+            for width in range(0, control_database.pixel_width):
+                for height in range(0, control_database.pixel_height):
+                    pixel_array[width][height] = model_result_reverted[width][height][i]
+            axes[i].imshow(pixel_array)
+        plt.show()
+
+        # Initializing shape of plot for RAPID
+        fig, axes = plt.subplots(4, 6)
+        axes = axes.ravel()
+        # Plotting RAPID Result
+        for i in range(24):
+            pixel_array = np.zeros((control_database.pixel_width, control_database.pixel_height))
+            for width in range(0, control_database.pixel_width):
+                for height in range(0, control_database.pixel_height):
+                    pixel_array[width][height] = y_reverted[width][height][i]
+            axes[i].imshow(pixel_array)
+        plt.show()

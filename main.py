@@ -3,7 +3,7 @@ import pydicom as dicom
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from models import models
+from models import sklearn_models
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import cross_val_score
@@ -13,169 +13,92 @@ from extract_train_test import extract_train_test
 
 from DCM_Structure import DCM, DCM_DATABASE
 from preprocessing import preprocessing
+import CNN_1x1
+from directory_manipulation import directory_operator
 
-############################# HYPER-PARAMETERS ##################################
-evaluate_models = False # Evaluate several models performance (takes a while)
-visualize_model = True # Visualize Logistic Regression's performance with images (or other model)
-preprocess_type = None #Default is None - no preprocessing
+############################# HYPER-PARAMETERS!!!!!!!! ##################################
+# Evaluate/Visualize sklearn models with neighboring pixel independence
+evaluate_sklearn_models = True
+# Can try any/all of these - logistic regression is the best so far and others take a long time
+sklearn_models_to_evaluate =  ["LogisticRegression"]#, "LinearRegression","SVM", "MultiLayerPerceptron"]
+
+# Evaluates/Visualizes simple CNN_1x1
+evaluate_CNN_1x1 = False
+batch_size = 24
+epochs = 500
+learning_rate = 0.001
+
+preprocess_type = None #Default is None - works well
+
+# Assertions that hyper-parameters are correctly input (can add more)
 assert (preprocess_type == None or preprocess_type == "log" or preprocess_type == "normalize")
+##################################################################################################
 
-
+# Import auxiliary Classes
 extracter = extract_train_test() # Extracting pixel information in various formats
-
 preprocesser = preprocessing() # Preprocesser class
+directory_operator = directory_operator(slices_per_timestamp=24, preprocess_type = preprocess_type) # Directory class
 
 # Folders with ".dcm" files
 DSC_DIRECTORY = "PERFUSION"
 RAPID_DIRECTORY = "RAPID-TMAX"
 
-#Need to generalize this - used for determining the 'timestamp' each .dcm belongs to. Seems like there's 24 images per time stamp
-slices_per_timestamp = 24
+# Extracting ".dcm" Files per Folder
+DSC_files = directory_operator.traverse_directory(DSC_DIRECTORY)
+RAPID_files = directory_operator.traverse_directory(RAPID_DIRECTORY)
 
-# Traverse directory and save ".dcm" filepaths into returned list
-def traverse_directory(dir):
-    path = os.walk(dir)
-    image_files = list()
-    for root, directories, files in path:
-        for file in files:
-            # Only extract the dicom files
-            if ".dcm" in file:
-                image_files.append(dir + "/" + file)
-    return image_files
-
-DSC_files = traverse_directory(DSC_DIRECTORY)
-RAPID_files = traverse_directory(RAPID_DIRECTORY)
-
-# Converting list of files into database with DCM type
-def create_database(image_files, rapid=False):
-    dcm_objects = []
-    counter = 0 #Used to calculate which timestamp each belongs to
-    for filename in image_files:
-
-        # Extract dcm data from file
-        ds = dicom.dcmread(filename)
-
-        #Slice number - rapid does not contain same information since only one set of slices
-        slice_number = counter + 1 if rapid else ds['InStackPositionNumber'].value
-
-        # Timestamp - rapid only has one 'time' so will always be 0
-        timestamp = 0 if rapid else np.round(ds.InstanceNumber / slices_per_timestamp)
-
-        # Return dicom pixel array or pre-processed version
-        pixel_array = ds.pixel_array if preprocess_type == None else preprocesser.pixel_transform(preprocess_type, ds.pixel_array)
-
-        # Create DCM class with data of interest
-        d = DCM(filename,pixel_array, slice_number, timestamp, ds.PatientName)
-
-        # Add DCM object to our database
-        dcm_objects.append(d)
-
-        # Update counter
-        counter += 1
-
-    # Create Database with dcm DCM_objects
-    d = DCM_DATABASE(dcm_objects)
-    # Return database
-    return d
-
+# Creating Database Object with Folder Data
 print("Making databases...")
-DSC_database = create_database(DSC_files)
-RAPID_database = create_database(RAPID_files, rapid=True)
+DSC_database = directory_operator.create_database(DSC_files)
+RAPID_database = directory_operator.create_database(RAPID_files, rapid=True)
 
-# Size of databases
-print("Control DCM Files: ", DSC_database.size())
-print("RAPID-modified DCM Files", RAPID_database.size())
-
-
-"""
-#Print a specific DICOM image from database
-plt.figure()
-print(RAPID_database.DCM_objects[18].pixel_data)
-plt.imshow(RAPID_database.DCM_objects[18].pixel_data)
-plt.show()
-"""
-
-# Visualizing Time Series for set of Pixels
+# Visualizing Time Series for set of Pixels - Not used right now, maybe later for different approach!
 """
 extracter.visualize_pixel_plot_per_slice(DSC_database, RAPID_database, num_pixels=150, slice_index=12)
 """
 
-print("Extracting X and Y for SKLEARN Models...")
-X, y = extracter.return_train_and_test(DSC_database, RAPID_database)
+if evaluate_CNN_1x1:
 
-print("X Shape: ", X.shape, "Y Shape: ", y.shape)
+    print("Extracting X and Y For CNNs")
+    X, y = extracter.return_train_and_test_by_slice(DSC_database, RAPID_database)
+    CNN_1x1.evaluate_CNN(X, y, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
 
-# Dividing data into train/test set (later we should do cross validation)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+elif evaluate_sklearn_models:
 
-# SKLEARN specific formatting
-y_train = np.ravel(y_train)
-y_test = np.ravel(y_test)
+    print("Extracting X and Y for SKLEARN Models...")
+    X, y = extracter.return_train_and_test_by_pixel(DSC_database, RAPID_database)
 
-# Model types for evaluating model
-model_types = ["LogisticRegression", "LinearRegression","SVM", "MultiLayerPerceptron"]
+    print("X Shape: ", X.shape, "Y Shape: ", y.shape)
 
-# Evaluate performance of several models
-if evaluate_models:
+    # Dividing data into train/test set (later we should do cross validation)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+
+    # SKLEARN specific formatting
+    y_train = np.ravel(y_train)
+    y_test = np.ravel(y_test)
+
+    # Evaluate model types and print scores
     score_messages = []
-    for model_type in model_types:
+    trained_sklearn_models = dict()
+    for model_type in sklearn_models_to_evaluate:
+
         print(model_type, " running...")
-        model = models(model_type) # Logistic Regression model
+
+        model = sklearn_models(model_type) # Logistic Regression model
         model.train(X_train, y_train)
+
+        trained_sklearn_models[model_type] = model
 
         result = model.evaluate(X_test, y_test)
         print("Result: ", result)
+
         score_messages.append(model_type + " | Score: " + str(result))
 
     print(score_messages)
 
-# Visualize a specific model's performance against ground truth
-# Graphs saved as .png file in current directory
-if visualize_model:
+    #### VISUALIZING MODEL TYPES
+    for model_type in sklearn_models_to_evaluate:
+        print("Visual of ", model_type)
+        sklearn_models.visualize_sklearn_model(X, y, trained_sklearn_models[model_type], DSC_database)
 
-    # Database that was used (not necessary to include this)
-    control_database = DSC_database
-
-    # Model for visualizing
-    model = models("LogisticRegression")
-
-    # Sklearn specific formatting
-    y = np.ravel(y)
-
-    # Train model and return prediction
-    model.train(X, y)
-    model_result = model.predict(X)
-
-    # Reverting predictions back into image shapes for printing
-    y_reverted = y.reshape(16384, 24, 1)
-    y_reverted = y_reverted.reshape(128, 128, 24)
-
-    model_result_reverted = model_result.reshape(16384, 24, 1)
-    model_result_reverted = model_result_reverted.reshape(128, 128, 24)
-
-    # Initializing shape of plot
-    fig, axes = plt.subplots(4,6)
-    axes = axes.ravel()
-    # Plotting Model Result
-    for i in range(24):
-        pixel_array = np.zeros((control_database.pixel_width,control_database.pixel_height))
-        for width in range(0,control_database.pixel_width):
-             for height in range(0,control_database.pixel_height):
-                pixel_array[width][height] = model_result_reverted[width][height][i]
-        axes[i].imshow(pixel_array)
-    plt.savefig("model_results.png")
-
-    # Initializing shape of plot
-    fig, axes = plt.subplots(4,6)
-    axes = axes.ravel()
-    # Plotting RAPID Result
-    for i in range(24):
-        pixel_array = np.zeros((control_database.pixel_width,control_database.pixel_height))
-        for width in range(0,control_database.pixel_width):
-             for height in range(0,control_database.pixel_height):
-                pixel_array[width][height] = y_reverted[width][height][i]
-        axes[i].imshow(pixel_array)
-    plt.savefig("rapid_results.png")
-
-#print(model.cross_validate(X, y)) # Print cross evaluation score
 

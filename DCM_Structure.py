@@ -33,6 +33,12 @@ class DCM_DATABASE:
         # Dictionary that stores the DCM file corresponding to specific slice and time for easy indexing
         self.DCM_per_slice_and_time = self.derive_DCM_per_slice_and_time()
 
+    def to_print(self):
+        to_print = "DICOM DATABASE\n" + "# DICOM Objects: " + str(len(self.DCM_objects)) + \
+                   "\n# Timestamps: " + str(self.number_of_timestamps) + \
+                    "\n# Slices: " + str(len(self.list_of_slices))
+        return to_print
+
     def getDCM_objects(self):
         return self.DCM_objects
 
