@@ -65,7 +65,7 @@ class CNN_models():
         X = Conv2D(1, (1, 1), strides=(1, 1), name='conv1')(X)
 
         # Create the model
-        model = Model(inputs=X_input, outputs=X, name='PleaseWork')
+        model = Model(inputs=X_input, outputs=X, name='TwoLayer')
 
         # Optimizer (Will be hyperparameter during more rigorous testing)
         opt = Adam(learning_rate=learning_rate)
@@ -87,6 +87,7 @@ class CNN_models():
         print("SCORE: ", score)
         output = model.predict(X_test)
         print("OUTPUT SHAPE: ", output.shape)
+        print("MODEL PREDICTION")
         self.visualize_CNN_output(output)
         return score
 
@@ -95,7 +96,7 @@ class CNN_models():
         fig, axes = plt.subplots(4, 6)
         axes = axes.ravel()
         for i in range(24):
-            axes[i].imshow(output[i])
+            axes[i].imshow(output[i], cmap='gray')
         plt.show()
 
     def grid_search(self, X, y, learning_rates, epochs, batch_sizes):

@@ -60,7 +60,7 @@ class sklearn_models():
             for width in range(0, 128):
                 for height in range(0, 128):
                     pixel_array[width][height] = model_result_reverted[width][height][i]
-            axes[i].imshow(pixel_array)
+            axes[i].imshow(pixel_array, cmap='gray')
         plt.show()
 
         # Initializing shape of plot for RAPID
@@ -72,5 +72,5 @@ class sklearn_models():
             for width in range(0, 128):
                 for height in range(0, 128):
                     pixel_array[width][height] = y_reverted[width][height][i]
-            axes[i].imshow(pixel_array)
+            axes[i].imshow(pixel_array, cmap='gray')
         plt.show()

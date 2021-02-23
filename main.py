@@ -28,7 +28,9 @@ batch_size = 24
 epochs = 100
 learning_rate = 0.001
 
-preprocess_type = None #Default is None - works well
+train_set_size = 0.67
+
+preprocess_type = None #Not really working yet
 
 # Assertions that hyper-parameters are correctly input (can add more)
 assert (preprocess_type == None or preprocess_type == "log" or preprocess_type == "normalize")
@@ -52,18 +54,13 @@ DATASET = directory_operator.organize(DATA_DIRECTORY)
 if evaluate_CNN_1x1:
 
     print("Extracting X and Y For CNNs")
-    X_train, y_train, X_test, y_test = extracter.slices_train_and_test(DATASET, 0.5)
+    X_train, y_train, X_test, y_test = extracter.slices_train_and_test(DATASET, train_set_size = train_set_size)
     CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
 
 elif evaluate_sklearn_models:
 
     print("Extracting X and Y for SKLEARN Models...")
-    X_train, y_train, X_test, y_test = extracter.pixels_train_and_test(DATASET, 0.5)
-
-    print("X_train Shape: ", X_train.shape)
-    print("Y_train Shape: ", y_train.shape)
-    print("X_test Shape: ", X_test.shape)
-    print("Y_test Shape: ", y_test.shape)
+    X_train, y_train, X_test, y_test = extracter.pixels_train_and_test(DATASET, train_set_size = train_set_size)
 
     # SKLEARN specific formatting
     y_train = np.ravel(y_train)

@@ -50,10 +50,18 @@ class extract_train_test:
             y.append(why)
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_set_size)
-        X_train = np.array(X_train).squeeze(axis=0)
-        y_train = np.array(y_train).squeeze(axis=0)
-        X_test = np.array(X_test).squeeze(axis=0)
-        y_test = np.array(y_test).squeeze(axis=0)
+
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        X_test = np.array(X_test)
+        y_test = np.array(y_test)
+
+        # Collapse the Xs together
+        X_train = X_train.reshape(-1, *X_train.shape[-3:])
+        y_train = y_train.reshape(-1, *y_train.shape[-2:])
+        X_test = X_test.reshape(-1, *X_test.shape[-3:])
+        y_test = y_test.reshape(-1, *y_test.shape[-2:])
+
         print("X_train Shape: ", X_train.shape)
         print("Y_train Shape: ", y_train.shape)
         print("X_test Shape: ", X_test.shape)
@@ -71,10 +79,22 @@ class extract_train_test:
             y.append(why)
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_set_size)
-        X_train = np.array(X_train).squeeze(axis=0)
-        y_train = np.array(y_train).squeeze(axis=0)
-        X_test = np.array(X_test).squeeze(axis=0)
-        y_test = np.array(y_test).squeeze(axis=0)
+
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        X_test = np.array(X_test)
+        y_test = np.array(y_test)
+
+        # Collapse the Xs together
+        X_train = X_train.reshape(-1, *X_train.shape[-1:])
+        y_train = y_train.reshape(-1, *y_train.shape[-1:])
+        X_test = X_test.reshape(-1, *X_test.shape[-1:])
+        y_test = y_test.reshape(-1, *y_test.shape[-1:])
+
+        print("X_train Shape: ", X_train.shape)
+        print("Y_train Shape: ", y_train.shape)
+        print("X_test Shape: ", X_test.shape)
+        print("Y_test Shape: ", y_test.shape)
 
         return (X_train, y_train, X_test, y_test)
 
@@ -199,9 +219,7 @@ class extract_train_test:
         X_modified = X_modified.reshape(-1, X_modified.shape[-1]) # (393216, 60)
         y_modified = y_modified.reshape(-1, y_modified.shape[-1]) # (393216, 1)
 
-        # Replace nan values with median pixel value
-
-        print("NEW PIXEL VALUE: ", nan_pixel_value)
+        # Replace nan values with max pixel value
         X_nan_fixed = np.nan_to_num(X_modified, nan=nan_pixel_value)  # SimpleImputer(missing_values=np.nan, strategy='mean').fit(X_modified)
         Y_nan_fixed = np.nan_to_num(y_modified, nan=nan_pixel_value)  # SimpleImputer(missing_values=np.nan, strategy='mean').fit(y_modified)
 
