@@ -36,10 +36,8 @@ class sklearn_models():
         return cross_val_score(self.model, X, y, cv=cross_validation, scoring=scoring_metric)
 
     @staticmethod
-    def visualize_sklearn_model(X, y, model, DSC_database):
+    def visualize_sklearn_model(X, y, model):
         print("Visualizing Model...")
-        # Database that was used (not necessary to include this)
-        control_database = DSC_database
 
         # Sklearn specific formatting
         y = np.ravel(y)
@@ -58,9 +56,9 @@ class sklearn_models():
         axes = axes.ravel()
         # Plotting Model Result
         for i in range(24):
-            pixel_array = np.zeros((control_database.pixel_width, control_database.pixel_height))
-            for width in range(0, control_database.pixel_width):
-                for height in range(0, control_database.pixel_height):
+            pixel_array = np.zeros((128, 128))
+            for width in range(0, 128):
+                for height in range(0, 128):
                     pixel_array[width][height] = model_result_reverted[width][height][i]
             axes[i].imshow(pixel_array)
         plt.show()
@@ -70,9 +68,9 @@ class sklearn_models():
         axes = axes.ravel()
         # Plotting RAPID Result
         for i in range(24):
-            pixel_array = np.zeros((control_database.pixel_width, control_database.pixel_height))
-            for width in range(0, control_database.pixel_width):
-                for height in range(0, control_database.pixel_height):
+            pixel_array = np.zeros((128, 128))
+            for width in range(0, 128):
+                for height in range(0, 128):
                     pixel_array[width][height] = y_reverted[width][height][i]
             axes[i].imshow(pixel_array)
         plt.show()

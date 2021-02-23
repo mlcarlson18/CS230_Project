@@ -13,7 +13,7 @@ from extract_train_test import extract_train_test
 
 from DCM_Structure import DCM, DCM_DATABASE
 from preprocessing import preprocessing
-import CNN_1x1
+from CNN_1x1 import CNN_models
 from directory_manipulation import directory_operator
 
 ############################# HYPER-PARAMETERS!!!!!!!! ##################################
@@ -25,7 +25,7 @@ sklearn_models_to_evaluate =  ["LogisticRegression"]#, "LinearRegression","SVM",
 # Evaluates/Visualizes simple CNN_1x1
 evaluate_CNN_1x1 = False
 batch_size = 24
-epochs = 500
+epochs = 100
 learning_rate = 0.001
 
 preprocess_type = None #Default is None - works well
@@ -38,40 +38,32 @@ assert (preprocess_type == None or preprocess_type == "log" or preprocess_type =
 extracter = extract_train_test() # Extracting pixel information in various formats
 preprocesser = preprocessing() # Preprocesser class
 directory_operator = directory_operator(slices_per_timestamp=24, preprocess_type = preprocess_type) # Directory class
+CNN_modeler = CNN_models()
 
-# Folders with ".dcm" files
-DSC_DIRECTORY = "PERFUSION"
-RAPID_DIRECTORY = "RAPID-TMAX"
 
-# Extracting ".dcm" Files per Folder
-DSC_files = directory_operator.traverse_directory(DSC_DIRECTORY)
-RAPID_files = directory_operator.traverse_directory(RAPID_DIRECTORY)
+# Data Folder
+DATA_DIRECTORY = "Data"
 
-# Creating Database Object with Folder Data
-print("Making databases...")
-DSC_database = directory_operator.create_database(DSC_files)
-RAPID_database = directory_operator.create_database(RAPID_files, rapid=True)
+print("Organizing Datasets...")
 
-# Visualizing Time Series for set of Pixels - Not used right now, maybe later for different approach!
-"""
-extracter.visualize_pixel_plot_per_slice(DSC_database, RAPID_database, num_pixels=150, slice_index=12)
-"""
+# Create Organized DATASET class comprising all the MRIs
+DATASET = directory_operator.organize(DATA_DIRECTORY)
 
 if evaluate_CNN_1x1:
 
     print("Extracting X and Y For CNNs")
-    X, y = extracter.return_train_and_test_by_slice(DSC_database, RAPID_database)
-    CNN_1x1.evaluate_CNN(X, y, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
+    X_train, y_train, X_test, y_test = extracter.slices_train_and_test(DATASET, 0.5)
+    CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
 
 elif evaluate_sklearn_models:
 
     print("Extracting X and Y for SKLEARN Models...")
-    X, y = extracter.return_train_and_test_by_pixel(DSC_database, RAPID_database)
+    X_train, y_train, X_test, y_test = extracter.pixels_train_and_test(DATASET, 0.5)
 
-    print("X Shape: ", X.shape, "Y Shape: ", y.shape)
-
-    # Dividing data into train/test set (later we should do cross validation)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+    print("X_train Shape: ", X_train.shape)
+    print("Y_train Shape: ", y_train.shape)
+    print("X_test Shape: ", X_test.shape)
+    print("Y_test Shape: ", y_test.shape)
 
     # SKLEARN specific formatting
     y_train = np.ravel(y_train)
@@ -99,6 +91,6 @@ elif evaluate_sklearn_models:
     #### VISUALIZING MODEL TYPES
     for model_type in sklearn_models_to_evaluate:
         print("Visual of ", model_type)
-        sklearn_models.visualize_sklearn_model(X, y, trained_sklearn_models[model_type], DSC_database)
+        sklearn_models.visualize_sklearn_model(X_test, y_test, trained_sklearn_models[model_type])
 
 

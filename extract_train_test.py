@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
+import sklearn
+from sklearn.model_selection import train_test_split
 from numpy import moveaxis
 
 
@@ -38,10 +40,48 @@ class extract_train_test:
                 to_return = np.vstack((to_return, i_fixed))
         return to_return
 
+    def slices_train_and_test(self, DATASET, train_set_size):
+        X = list()
+        y = list()
+        for c in DATASET.Controls:
+            r = DATASET.Rapids_per_Controls[c]
+            ex, why = self.return_train_and_test_by_slice(c, r)
+            X.append(ex)
+            y.append(why)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_set_size)
+        X_train = np.array(X_train).squeeze(axis=0)
+        y_train = np.array(y_train).squeeze(axis=0)
+        X_test = np.array(X_test).squeeze(axis=0)
+        y_test = np.array(y_test).squeeze(axis=0)
+        print("X_train Shape: ", X_train.shape)
+        print("Y_train Shape: ", y_train.shape)
+        print("X_test Shape: ", X_test.shape)
+        print("Y_test Shape: ", y_test.shape)
+
+        return (X_train, y_train, X_test, y_test)
+
+    def pixels_train_and_test(self, DATASET, train_set_size):
+        X = list()
+        y = list()
+        for c in DATASET.Controls:
+            r = DATASET.Rapids_per_Controls[c]
+            ex, why = self.return_train_and_test_by_pixel(c, r)
+            X.append(ex)
+            y.append(why)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_set_size)
+        X_train = np.array(X_train).squeeze(axis=0)
+        y_train = np.array(y_train).squeeze(axis=0)
+        X_test = np.array(X_test).squeeze(axis=0)
+        y_test = np.array(y_test).squeeze(axis=0)
+
+        return (X_train, y_train, X_test, y_test)
 
     # Extracting X and Y For CNN architectures
     def return_train_and_test_by_slice(self, control_database, rapid_database, for_visualization_purposes = False
                                        ):
+
         # X and y to train our model
         X = dict()
         y = dict()
@@ -85,8 +125,6 @@ class extract_train_test:
         X_retrieved = np.swapaxes(X_retrieved, 2, 3)
 
         y_retrieved = y_retrieved.reshape(24, 128, 128)
-        print("X Shape: ", X_retrieved.shape)
-        print("Y Shape: ", y_retrieved.shape)
 
         return X_retrieved, y_retrieved
 
@@ -171,6 +209,9 @@ class extract_train_test:
         return X_nan_fixed, Y_nan_fixed
 
     # When trying to find vein and artery location, we want these plots to approximate our intended result
+    """
+    DEPRECIATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DONT USE FOR NOW 
+    """
     def visualize_pixel_plot_per_slice(self, control_database, rapid_database, num_pixels, slice_index):
 
         # Extract X

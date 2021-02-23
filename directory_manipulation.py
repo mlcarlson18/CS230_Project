@@ -1,6 +1,6 @@
 import numpy as np
 import pydicom as dicom
-from DCM_Structure import DCM, DCM_DATABASE
+from DCM_Structure import DCM, DCM_DATABASE, DCM_DATASET
 import os
 from preprocessing import preprocessing
 
@@ -12,6 +12,27 @@ class directory_operator:
         self.slices_per_timestamp = slices_per_timestamp
         self.preprocess_type = preprocess_type
         self.preprocesser = preprocessing()  # Preprocesser class
+
+    def organize(self, dir):
+        folders = self.traverse_group(dir)
+
+        databases = list()
+        for f in folders:
+            if "TMAX" in f:
+                databases.append(self.create_database(self.traverse_directory(f), f, rapid=True))
+            else:
+                databases.append(self.create_database(self.traverse_directory(f), f))
+        return self.create_dataset(databases)
+
+    def traverse_group(self, dir):
+        path = os.walk(dir)
+        dir_folders = list()
+        for root, directories, files in path:
+            for d in directories:
+                # Only extract data folders
+                if ("PERFUSION" in d or "TMAX" in d):
+                    dir_folders.append(root + "/" + d)
+        return dir_folders
 
     # Traverse directory and save ".dcm" filepaths into returned list
     def traverse_directory(self, dir):
@@ -25,7 +46,10 @@ class directory_operator:
         return image_files
 
     # Converting list of files into database with DCM type
-    def create_database(self, image_files, rapid=False):
+    def create_database(self, image_files, folder_name, rapid=False):
+
+        assert len(image_files) > 0
+
         dcm_objects = []
         counter = 0  # Used to calculate which timestamp each belongs to
         for filename in image_files:
@@ -39,8 +63,9 @@ class directory_operator:
             timestamp = 0 if rapid else np.round(ds.InstanceNumber / self.slices_per_timestamp)
 
             # Return dicom pixel array or pre-processed version
-            pixel_array = ds.pixel_array if self.preprocess_type == None else self.preprocesser.pixel_transform(self.preprocess_type,
-                                                                                                      ds.pixel_array)
+            pixel_array = ds.pixel_array if self.preprocess_type == None else self.preprocesser.pixel_transform(
+                self.preprocess_type,
+                ds.pixel_array)
 
             # Create DCM class with data of interest
             d = DCM(filename, pixel_array, slice_number, timestamp, ds.PatientName)
@@ -52,6 +77,10 @@ class directory_operator:
             counter += 1
 
         # Create Database with dcm DCM_objects
-        d = DCM_DATABASE(dcm_objects)
+        d = DCM_DATABASE(dcm_objects, folder_name)
         # Return database
+        return d
+
+    def create_dataset(self, databases):
+        d = DCM_DATASET(databases)
         return d
