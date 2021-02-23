@@ -45,7 +45,7 @@ class extract_train_test:
         y = list()
         for c in DATASET.Controls:
             r = DATASET.Rapids_per_Controls[c]
-            ex, why = self.return_train_and_test_by_slice(c, r)
+            ex, why = self.return_train_and_test_by_slice(c, r, DATASET.max_pixel_value)
             X.append(ex)
             y.append(why)
 
@@ -66,7 +66,7 @@ class extract_train_test:
         y = list()
         for c in DATASET.Controls:
             r = DATASET.Rapids_per_Controls[c]
-            ex, why = self.return_train_and_test_by_pixel(c, r)
+            ex, why = self.return_train_and_test_by_pixel(c, r,DATASET.max_pixel_value)
             X.append(ex)
             y.append(why)
 
@@ -79,7 +79,7 @@ class extract_train_test:
         return (X_train, y_train, X_test, y_test)
 
     # Extracting X and Y For CNN architectures
-    def return_train_and_test_by_slice(self, control_database, rapid_database, for_visualization_purposes = False
+    def return_train_and_test_by_slice(self, control_database, rapid_database, nan_pixel_value, for_visualization_purposes = False
                                        ):
 
         # X and y to train our model
@@ -111,7 +111,7 @@ class extract_train_test:
                         values = np.array(pixel_data)
                         first_slice = False
                     else:
-                        values = np.vstack((values, np.full((128, 128), self.nan_pixel_value))
+                        values = np.vstack((values, np.full((128, 128), nan_pixel_value))
                                            )
 
             X[slice] = values
@@ -140,7 +140,7 @@ class extract_train_test:
     Tmax is used in the algorithm, and only basic ML implemented
     """
 
-    def return_train_and_test_by_pixel(self, control_database, rapid_database, for_visualization_purposes = False):
+    def return_train_and_test_by_pixel(self, control_database, rapid_database, nan_pixel_value, for_visualization_purposes = False):
 
         # Some files that don't have pixel data
         lost_files = 0
@@ -201,7 +201,6 @@ class extract_train_test:
 
         # Replace nan values with median pixel value
 
-        nan_pixel_value = np.nanmax(X_modified.copy().flatten())
         print("NEW PIXEL VALUE: ", nan_pixel_value)
         X_nan_fixed = np.nan_to_num(X_modified, nan=nan_pixel_value)  # SimpleImputer(missing_values=np.nan, strategy='mean').fit(X_modified)
         Y_nan_fixed = np.nan_to_num(y_modified, nan=nan_pixel_value)  # SimpleImputer(missing_values=np.nan, strategy='mean').fit(y_modified)

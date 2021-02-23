@@ -82,6 +82,8 @@ class DCM_DATASET():
         self.Controls, self.Rapids = self.segregate_databases()
         # Dictionary for retrieving corresponding folders (X and y)
         self.Controls_per_Rapids, self.Rapids_per_Controls = self.create_retrieval_dictionaries()
+        # Max Value in Entire Dataset
+        self.max_pixel_value = self.get_max_pixel_value()
 
     def segregate_databases(self):
         controls = list()
@@ -102,3 +104,11 @@ class DCM_DATASET():
                     rapids_per_controls[c] = r
                     controls_per_rapids[r] = c
         return controls_per_rapids, rapids_per_controls
+
+    def get_max_pixel_value(self):
+        max_value = 0
+        for d in self.DCM_Databases:
+            for a in d.DCM_objects:
+                m = max(a.pixel_data.flatten())
+                max_value = m if m > max_value else max_value
+        return max_value
