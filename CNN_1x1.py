@@ -88,15 +88,18 @@ class CNN_models():
         output = model.predict(X_test)
         print("OUTPUT SHAPE: ", output.shape)
         print("MODEL PREDICTION")
-        self.visualize_CNN_output(output)
+        self.visualize_CNN_output(output, "MODEL PREDICTION")
+        print("Expected:")
+        self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
         return score
 
     # Visualize the output of the CNN
-    def visualize_CNN_output(self, output):
+    def visualize_CNN_output(self, output, title=""):
         fig, axes = plt.subplots(4, 6)
         axes = axes.ravel()
         for i in range(24):
             axes[i].imshow(output[i], cmap='gray')
+        fig.suptitle(title)
         plt.show()
 
     def grid_search(self, X, y, learning_rates, epochs, batch_sizes):
