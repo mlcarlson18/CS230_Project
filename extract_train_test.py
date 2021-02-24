@@ -49,7 +49,7 @@ class extract_train_test:
             X.append(ex)
             y.append(why)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_set_size)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 1)#train_size=train_set_size)
 
         X_train = np.array(X_train)
         y_train = np.array(y_train)
@@ -78,7 +78,7 @@ class extract_train_test:
             X.append(ex)
             y.append(why)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_set_size)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1)#train_size=train_set_size)
 
         X_train = np.array(X_train)
         y_train = np.array(y_train)
