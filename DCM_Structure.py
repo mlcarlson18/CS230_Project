@@ -112,3 +112,13 @@ class DCM_DATASET():
                 m = max(a.pixel_data.flatten())
                 max_value = m if m > max_value else max_value
         return max_value
+
+    def standardize(self):
+        for database in self.DCM_Databases:
+            for image in database.DCM_objects:
+                image.pixel_data = image.pixel_data / self.max_pixel_value
+                # for w in range(pixels.shape[0]):
+                #     for h in range(pixels.shape[1]):
+                #         pixels[w][h] = float(pixels[w][h] / self.max_pixel_value)
+
+

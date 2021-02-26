@@ -13,7 +13,7 @@ import numpy as np
 class sklearn_models():
     def __init__(self, model_type="LogisticRegression"):
         if model_type == "LogisticRegression":
-            self.model = LogisticRegression(max_iter = 50)
+            self.model = LogisticRegression(max_iter = 25)
         elif model_type == "LinearRegression":
             self.model = LinearRegression()
         elif model_type == "SVM":

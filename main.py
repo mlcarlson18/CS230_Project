@@ -17,23 +17,23 @@ from CNN_1x1 import CNN_models
 from directory_manipulation import directory_operator
 
 ############################# HYPER-PARAMETERS!!!!!!!! ##################################
+
+standardize_pixels_between_0_and_1 = False
+preprocess_type = None
+
 # Evaluate/Visualize sklearn models with neighboring pixel independence
-evaluate_sklearn_models = False
+evaluate_sklearn_models = True
 # Can try any/all of these - logistic regression is the best so far and others take a long time
 sklearn_models_to_evaluate =  ["LogisticRegression"]#, "LinearRegression","SVM", "MultiLayerPerceptron"]
 
 # Evaluates/Visualizes simple CNN_1x1
-evaluate_CNN_1x1 = True
+evaluate_CNN_1x1 = False
+
 batch_size = 24
-epochs = 100
-learning_rate = 0.001
+epochs = 25
+learning_rate = 0.0001
 
 train_set_size = 0.67
-
-preprocess_type = None #Not really working yet
-
-# Assertions that hyper-parameters are correctly input (can add more)
-assert (preprocess_type == None or preprocess_type == "log" or preprocess_type == "normalize")
 ##################################################################################################
 
 # Import auxiliary Classes
@@ -46,10 +46,15 @@ CNN_modeler = CNN_models()
 # Data Folder
 DATA_DIRECTORY = "Data"
 
-print("Organizing Datasets...")
+print("Organizing Dataset...")
 
 # Create Organized DATASET class comprising all the MRIs
 DATASET = directory_operator.organize(DATA_DIRECTORY)
+
+# Standardize Pixels
+if standardize_pixels_between_0_and_1:
+    print("Standardizing Dataset b/w 0 and 1...")
+    DATASET.standardize()
 
 if evaluate_CNN_1x1:
 

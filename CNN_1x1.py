@@ -81,7 +81,7 @@ class CNN_models():
     # Train - Test - and Visualize the CNN output
     def evaluate_CNN(self, X_train, y_train, X_test, y_test, epochs=500, batch_size=24, learning_rate=0.001):
 
-        model = self.make_medium_model(learning_rate)
+        model = self.make_simplest_model(learning_rate)
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
         score = model.evaluate(X_test, y_test)
         print("SCORE: ", score)
