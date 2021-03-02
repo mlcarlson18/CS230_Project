@@ -13,7 +13,7 @@ from extract_train_test import extract_train_test
 
 from DCM_Structure import DCM, DCM_DATABASE
 from preprocessing import preprocessing
-from CNN_1x1 import CNN_models
+from CNN_models import CNN_models
 from directory_manipulation import directory_operator
 
 ############################# HYPER-PARAMETERS!!!!!!!! ##################################
@@ -27,20 +27,25 @@ evaluate_sklearn_models = False
 sklearn_models_to_evaluate = ["KNearestNeighbor"] #["LogisticRegression"]#, "LinearRegression","SVM", "MultiLayerPerceptron"]
 
 # Evaluates/Visualizes simple CNN_1x1
-evaluate_CNN_1x1 = True
+evaluate_CNN =  True
 
+CNN_model_dimension = 3
+CNN_model_num_layers = 1
 batch_size = 24
 epochs = 25
 learning_rate = 0.0001
 
-train_set_size = 0.67
+# What has currently been implemented:
+assert CNN_model_dimension == 2 or CNN_model_dimension == 3
+assert CNN_model_num_layers == 1 or CNN_model_num_layers == 2
+
+train_set_size = 0.67 # Not being implemented currently (always leaves one out for test)
 ##################################################################################################
 
 # Import auxiliary Classes
 extracter = extract_train_test() # Extracting pixel information in various formats
 preprocesser = preprocessing() # Preprocesser class
 directory_operator = directory_operator(slices_per_timestamp=24, preprocess_type = preprocess_type) # Directory class
-CNN_modeler = CNN_models()
 
 
 # Data Folder
@@ -56,10 +61,18 @@ if standardize_pixels_between_0_and_1:
     print("Standardizing Dataset b/w 0 and 1...")
     DATASET.standardize()
 
-if evaluate_CNN_1x1:
-
+if evaluate_CNN:
+    # Initiate CNN Class with Desired Layers and Dimension
+    CNN_modeler = CNN_models(CNN_model_dimension, CNN_model_num_layers)
     print("Extracting X and Y For CNNs")
-    X_train, y_train, X_test, y_test = extracter.slices_train_and_test(DATASET, train_set_size = train_set_size)
+
+    # Divide Dataset into slices or entire brains
+    if CNN_model_dimension == 2:
+        X_train, y_train, X_test, y_test = extracter.slices_train_and_test(DATASET, train_set_size = train_set_size)
+    elif CNN_model_dimension == 3:
+        X_train, y_train, X_test, y_test = extracter.brain_train_and_test(DATASET)
+
+    # Evaluate CNN
     CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
 
 elif evaluate_sklearn_models:

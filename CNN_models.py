@@ -1,7 +1,7 @@
 import numpy as np
 import keras
 from keras import layers
-from keras.layers import Input, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Conv2D
+from keras.layers import Input, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Conv2D, Conv3D
 from keras.layers import AveragePooling2D, MaxPooling2D, Dropout, GlobalMaxPooling2D, GlobalAveragePooling2D
 from keras.models import Model
 from keras.preprocessing import image
@@ -29,11 +29,21 @@ We cannot use any Max Pooling or FC or Flatten layers, as those will reduce the 
 
 
 class CNN_models():
-    def __init__(self):
-        self.placeholder = True
+    def __init__(self, d, layers):
+        self.layers = layers
+        self.d = d
+
+    def model_3D_1Layer(self, learning_rate):
+        X_input = Input((24, 128, 128, 60))
+        X = Conv3D(1, (1,1,1), strides=(1,1,1), name='conv0')(X_input)
+        model = Model(inputs=X_input, outputs=X, name="3DModel")
+        opt = Adam(learning_rate=learning_rate)
+        model.compile(loss='mean_squared_error', optimizer = opt)
+        model.summary()
+        return model
 
     # Make and Compile the CNN architecture
-    def make_simplest_model(self, learning_rate):
+    def model_1Layer(self, learning_rate):
 
         X_input = Input((128, 128, 60))
 
@@ -56,7 +66,7 @@ class CNN_models():
 
     # Slightly More Complex Architecture
     # 2 Conv2D Layers, WITH batch normalization!
-    def make_medium_model(self, learning_rate):
+    def model_2Layer(self, learning_rate):
         X_input = Input((128, 128, 60))
 
         X = BatchNormalization(name='bn0')(X_input)
@@ -80,17 +90,32 @@ class CNN_models():
 
     # Train - Test - and Visualize the CNN output
     def evaluate_CNN(self, X_train, y_train, X_test, y_test, epochs=500, batch_size=24, learning_rate=0.001):
+        if self.d == 2:
+            if self.layers == 2:
+                model = self.model_2Layer(learning_rate)
+            elif self.layers == 1:
+                model = self.model_1Layer(learning_rate)
+        elif self.d == 3:
+            model = self.model_3D_1Layer(learning_rate)
 
-        model = self.make_medium_model(learning_rate)
+
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
         score = model.evaluate(X_test, y_test)
         print("SCORE: ", score)
         output = model.predict(X_test)
         print("OUTPUT SHAPE: ", output.shape)
         print("MODEL PREDICTION")
-        self.visualize_CNN_output(output, "MODEL PREDICTION")
-        print("Expected:")
-        self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
+
+        if self.d == 2:
+            self.visualize_CNN_output(output, "MODEL PREDICTION")
+            print("Expected:")
+            self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
+        elif self.d == 3:
+            output = output.reshape(24, 128, 128)
+            self.visualize_CNN_output(output, "MODEL PREDICTION")
+            print("Expected:")
+            y_test = y_test.reshape(24, 128, 128)
+            self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
 
         return score
 

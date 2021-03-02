@@ -40,6 +40,30 @@ class extract_train_test:
                 to_return = np.vstack((to_return, i_fixed))
         return to_return
 
+    # For 3D CNNs
+    def brain_train_and_test(self, DATASET):
+        X = list()
+        y = list()
+        for c in DATASET.Controls:
+            r = DATASET.Rapids_per_Controls[c]
+            ex, why = self.return_train_and_test_by_slice(c, r, DATASET.max_pixel_value)
+            X.append(ex)
+            y.append(why)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 1, random_state=3)
+
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        X_test = np.array(X_test)
+        y_test = np.array(y_test)
+
+        print("X_train Shape: ", X_train.shape)
+        print("Y_train Shape: ", y_train.shape)
+        print("X_test Shape: ", X_test.shape)
+        print("Y_test Shape: ", y_test.shape)
+
+        return (X_train, y_train, X_test, y_test)
+
     def slices_train_and_test(self, DATASET, train_set_size):
         X = list()
         y = list()
@@ -55,6 +79,11 @@ class extract_train_test:
         y_train = np.array(y_train)
         X_test = np.array(X_test)
         y_test = np.array(y_test)
+
+        print("X_train Shape: ", X_train.shape)
+        print("Y_train Shape: ", y_train.shape)
+        print("X_test Shape: ", X_test.shape)
+        print("Y_test Shape: ", y_test.shape)
 
         # Collapse the Xs together
         X_train = X_train.reshape(-1, *X_train.shape[-3:])
@@ -78,7 +107,7 @@ class extract_train_test:
             X.append(ex)
             y.append(why)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1, random_state = 2)#train_size=train_set_size)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1, random_state = 3)#train_size=train_set_size)
 
         X_train = np.array(X_train)
         y_train = np.array(y_train)
