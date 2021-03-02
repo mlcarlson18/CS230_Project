@@ -22,12 +22,12 @@ standardize_pixels_between_0_and_1 = False
 preprocess_type = None
 
 # Evaluate/Visualize sklearn models with neighboring pixel independence
-evaluate_sklearn_models = True
+evaluate_sklearn_models = False
 # Can try any/all of these - logistic regression is the best so far and others take a long time
-sklearn_models_to_evaluate =  ["LogisticRegression"]#, "LinearRegression","SVM", "MultiLayerPerceptron"]
+sklearn_models_to_evaluate = ["KNearestNeighbor"] #["LogisticRegression"]#, "LinearRegression","SVM", "MultiLayerPerceptron"]
 
 # Evaluates/Visualizes simple CNN_1x1
-evaluate_CNN_1x1 = False
+evaluate_CNN_1x1 = True
 
 batch_size = 24
 epochs = 25

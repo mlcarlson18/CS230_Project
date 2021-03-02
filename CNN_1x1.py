@@ -81,7 +81,7 @@ class CNN_models():
     # Train - Test - and Visualize the CNN output
     def evaluate_CNN(self, X_train, y_train, X_test, y_test, epochs=500, batch_size=24, learning_rate=0.001):
 
-        model = self.make_simplest_model(learning_rate)
+        model = self.make_medium_model(learning_rate)
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
         score = model.evaluate(X_test, y_test)
         print("SCORE: ", score)
@@ -91,6 +91,7 @@ class CNN_models():
         self.visualize_CNN_output(output, "MODEL PREDICTION")
         print("Expected:")
         self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
+
         return score
 
     # Visualize the output of the CNN
@@ -98,8 +99,12 @@ class CNN_models():
         fig, axes = plt.subplots(4, 6)
         axes = axes.ravel()
         for i in range(24):
-            axes[i].imshow(output[i], cmap='gray')
-        fig.suptitle(title)
+            im = axes[i].imshow(output[i], cmap='gray')
+        #fig.suptitle(title)
+        cb_ax = fig.add_axes([0.91, 0.1, 0.02, 0.8])
+        cbar = fig.colorbar(im, cax=cb_ax, shrink = 0.95)
+        cbar.set_ticks([])
+
         plt.show()
 
     def grid_search(self, X, y, learning_rates, epochs, batch_sizes):

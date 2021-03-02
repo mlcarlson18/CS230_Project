@@ -7,6 +7,7 @@ from sklearn.svm import SVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -21,6 +22,10 @@ class sklearn_models():
         elif model_type == "MultiLayerPerceptron":
             self.model = MLPClassifier(solver='lbfgs', alpha=1e-5,
                      hidden_layer_sizes=(5, 2), random_state=1)
+        elif model_type == "NaiveBayes":
+            self.model = GaussianNB()
+        elif model_type == "KNearestNeighbor":
+            self.model = KNeighborsClassifier()
 
 
     def train(self, X_train, y_train):
@@ -30,9 +35,10 @@ class sklearn_models():
         return self.model.predict(X_test)
 
     def evaluate(self, X_test, y_test):
-        return self.model.score(X_test, y_test)
+        y_pred = self.model.predict(X_test)
+        return mean_squared_error(y_test, y_pred)
 
-    def cross_validate(self, X, y, scoring_metric='neg_mean_squared_error', cross_validation = 3):
+    def cross_validate(self, X, y, scoring_metric='neg_mean_squared_error', cross_validation = 2):
         return cross_val_score(self.model, X, y, cv=cross_validation, scoring=scoring_metric)
 
     @staticmethod
