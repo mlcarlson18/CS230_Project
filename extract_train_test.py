@@ -52,8 +52,8 @@ class extract_train_test:
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 1, random_state=3)
 
-        X_train = np.array(X_train)[:2]
-        y_train = np.array(y_train)[:2]
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
         X_test = np.array(X_test)
         y_test = np.array(y_test)
 

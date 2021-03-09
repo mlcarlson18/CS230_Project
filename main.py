@@ -26,9 +26,10 @@ evaluate_sklearn_models = False
 # Can try any/all of these - logistic regression is the best so far and others take a long time
 sklearn_models_to_evaluate = ["KNearestNeighbor"] #["LogisticRegression"]#, "LinearRegression","SVM", "MultiLayerPerceptron"]
 
-# Evaluates/Visualizes simple CNN_1x1
+# Evaluates/Visualizes CNN
 evaluate_CNN =  False
 
+# Evaluates UNET
 evaluate_UNET = True
 
 CNN_model_dimension = 3
