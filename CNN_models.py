@@ -18,6 +18,14 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import imshow
 import keras
 from keras import backend
+import numpy as np
+import os
+import numpy as np
+from keras.models import *
+from keras.layers import *
+from keras.optimizers import *
+from keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from keras import backend as keras
 
 """
 The idea is to use 1x1 Conv2D Layers to Collapse the 'time' dimension. In this model, we are still 
@@ -29,9 +37,61 @@ We cannot use any Max Pooling or FC or Flatten layers, as those will reduce the 
 
 
 class CNN_models():
-    def __init__(self, d, layers):
+    def __init__(self, d, layers, unet=False):
         self.layers = layers
         self.d = d
+        self.unet = unet
+    # https://github.com/mrkolarik/3D-brain-segmentation/blob/master/3D-unet.py
+    def model_unet(self):
+        #K.set_image_data_format('channels_last')
+        inputs = Input((24, 128, 128, 60))
+        conv1 = Conv3D(32, (3, 3, 3), activation='relu', padding='same')(inputs)
+        conv1 = Conv3D(32, (3, 3, 3), activation='relu', padding='same')(conv1)
+        pool1 = MaxPooling3D(pool_size=(2, 2, 2))(conv1)
+
+        conv2 = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(pool1)
+        conv2 = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(conv2)
+        pool2 = MaxPooling3D(pool_size=(2, 2, 2))(conv2)
+
+        conv3 = Conv3D(128, (3, 3, 3), activation='relu', padding='same')(pool2)
+        conv3 = Conv3D(128, (3, 3, 3), activation='relu', padding='same')(conv3)
+        pool3 = MaxPooling3D(pool_size=(2, 2, 2))(conv3)
+
+        conv4 = Conv3D(256, (3, 3, 3), activation='relu', padding='same')(pool3)
+        conv4 = Conv3D(256, (3, 3, 3), activation='relu', padding='same')(conv4)
+        pool4 = MaxPooling3D(pool_size=(2, 2, 2))(conv4)
+
+        conv5 = Conv3D(512, (3, 3, 3), activation='relu', padding='same')(pool4)
+        conv5 = Conv3D(512, (3, 3, 3), activation='relu', padding='same')(conv5)
+
+        up6 = concatenate([Conv3DTranspose(256, (2, 2, 2), strides=(2, 2, 2), padding='same')(conv5), conv4], axis=4)
+        #up6 = concatenate([Conv3DTranspose(256, (3, 3, 3), strides=(2, 2, 2), padding='same')(conv5), conv4], axis=4)
+        conv6 = Conv3D(256, (3, 3, 3), activation='relu', padding='same')(up6)
+        conv6 = Conv3D(256, (3, 3, 3), activation='relu', padding='same')(conv6)
+
+        up7 = concatenate([Conv3DTranspose(128, (2, 2, 2), strides=(2, 2, 2), padding='same')(conv6), conv3], axis=4)
+        conv7 = Conv3D(128, (3, 3, 3), activation='relu', padding='same')(up7)
+        conv7 = Conv3D(128, (3, 3, 3), activation='relu', padding='same')(conv7)
+
+        up8 = concatenate([Conv3DTranspose(64, (2, 2, 2), strides=(2, 2, 2), padding='same')(conv7), conv2], axis=4)
+        conv8 = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(up8)
+        conv8 = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(conv8)
+
+        up9 = concatenate([Conv3DTranspose(32, (2, 2, 2), strides=(2, 2, 2), padding='same')(conv8), conv1], axis=4)
+        conv9 = Conv3D(32, (3, 3, 3), activation='relu', padding='same')(up9)
+        conv9 = Conv3D(32, (3, 3, 3), activation='relu', padding='same')(conv9)
+
+        conv10 = Conv3D(1, (1, 1, 1), activation='sigmoid')(conv9)
+
+        model = Model(inputs=[inputs], outputs=[conv10])
+
+        model.summary()
+        # plot_model(model, to_file='model.png')
+
+        model.compile(optimizer=Adam(lr=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.000000199),
+                      loss='binary_crossentropy', metrics=['accuracy'])
+
+        return model
 
     def model_3D_1Layer(self, learning_rate):
         X_input = Input((24, 128, 128, 60))
@@ -90,6 +150,8 @@ class CNN_models():
 
     # Train - Test - and Visualize the CNN output
     def evaluate_CNN(self, X_train, y_train, X_test, y_test, epochs=500, batch_size=24, learning_rate=0.001):
+        if self.unet:
+            model = self.model_unet()
         if self.d == 2:
             if self.layers == 2:
                 model = self.model_2Layer(learning_rate)
@@ -97,6 +159,7 @@ class CNN_models():
                 model = self.model_1Layer(learning_rate)
         elif self.d == 3:
             model = self.model_3D_1Layer(learning_rate)
+
 
 
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
@@ -140,3 +203,10 @@ class CNN_models():
                     scores[str(lr) + ":" + str(e) + ":" + str(bc)] = self.evalute_CNN(X, y, e, bc, lr)
         print(scores)
         return scores
+
+    def dice_coef(self,y_true, y_pred):
+        smooth=1
+        y_true_f = K.flatten(y_true)
+        y_pred_f = K.flatten(y_pred)
+        intersection = K.sum(y_true_f * y_pred_f)
+        return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)

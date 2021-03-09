@@ -27,7 +27,9 @@ evaluate_sklearn_models = False
 sklearn_models_to_evaluate = ["KNearestNeighbor"] #["LogisticRegression"]#, "LinearRegression","SVM", "MultiLayerPerceptron"]
 
 # Evaluates/Visualizes simple CNN_1x1
-evaluate_CNN =  True
+evaluate_CNN =  False
+
+evaluate_UNET = True
 
 CNN_model_dimension = 3
 CNN_model_num_layers = 1
@@ -73,6 +75,11 @@ if evaluate_CNN:
         X_train, y_train, X_test, y_test = extracter.brain_train_and_test(DATASET)
 
     # Evaluate CNN
+    CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
+
+elif evaluate_UNET:
+    CNN_modeler = CNN_models(0, 0, unet=True)
+    X_train, y_train, X_test, y_test = extracter.brain_train_and_test(DATASET)
     CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
 
 elif evaluate_sklearn_models:
