@@ -102,6 +102,18 @@ class CNN_models():
         model.summary()
         return model
 
+    def model_3D_2Layer(self, learning_rate):
+        X_input = Input((24, 128, 128, 60))
+        X = BatchNormalization(name='bn0')(X_input)
+        X = Conv3D(12, (1, 1, 1), strides=(1, 1, 1), name='conv0')(X)
+        X = BatchNormalization(name='bn1')(X)
+        X = Conv3D(1, (1, 1, 1), strides=(1, 1, 1), name='conv1')(X)
+        model = Model(inputs=X_input, outputs=X, name="3DModel")
+        opt = Adam(learning_rate=learning_rate)
+        model.compile(loss='mean_squared_error', optimizer=opt)
+        model.summary()
+        return model
+
     # Make and Compile the CNN architecture
     def model_1Layer(self, learning_rate):
 
@@ -158,7 +170,10 @@ class CNN_models():
             elif self.layers == 1:
                 model = self.model_1Layer(learning_rate)
         elif self.d == 3:
-            model = self.model_3D_1Layer(learning_rate)
+            if self.layers == 1:
+                model = self.model_3D_1Layer(learning_rate)
+            if self.layers == 2:
+                model = self.model_3D_2Layer(learning_rate)
 
 
 
