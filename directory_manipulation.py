@@ -59,8 +59,15 @@ class directory_operator:
             # Slice number - rapid does not contain same information since only one set of slices
             slice_number = counter + 1 if rapid else ds['InStackPositionNumber'].value
 
+            # Discount last slices when num is too hight in order to conform to 24 standard
+            if slice_number > 24:
+                continue
+
             # Timestamp - rapid only has one 'time' so will always be 0
             timestamp = 0 if rapid else np.round(ds.InstanceNumber / self.slices_per_timestamp)
+
+            if timestamp > 60:
+                continue
 
             # Return dicom pixel array or pre-processed version
             pixel_array = ds.pixel_array if self.preprocess_type == None else self.preprocesser.pixel_transform(
@@ -76,8 +83,14 @@ class directory_operator:
             # Update counter
             counter += 1
 
+        # Ensuring each folder has correct number of image files
+        if (rapid and len(dcm_objects) != 24) or (rapid == False and len(dcm_objects != 1440)):
+            print("Problem with number of files in data folder: ", folder_name, " ", len(dcm_objects))
+            return None
+
         # Create Database with dcm DCM_objects
         d = DCM_DATABASE(dcm_objects, folder_name)
+
         # Return database
         return d
 

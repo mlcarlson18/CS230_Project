@@ -27,13 +27,13 @@ evaluate_sklearn_models = False
 sklearn_models_to_evaluate = ["KNearestNeighbor"] #["LogisticRegression"]#, "LinearRegression","SVM", "MultiLayerPerceptron"]
 
 # Evaluates/Visualizes CNN
-evaluate_CNN =  False
+evaluate_CNN =  True
 
 # Evaluates UNET
-evaluate_UNET = True
+evaluate_UNET = False
 
 CNN_model_dimension = 3
-CNN_model_num_layers = 1
+CNN_model_num_layers = 2
 batch_size = 24
 epochs = 25
 learning_rate = 0.0001
