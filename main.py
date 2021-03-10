@@ -16,6 +16,8 @@ from preprocessing import preprocessing
 from CNN_models import CNN_models
 from directory_manipulation import directory_operator
 from datetime import date
+import pandas as pd
+from sklearn.model_selection import KFold
 
 today = date.today()
 
@@ -42,7 +44,7 @@ epochs = 25
 learning_rate = 0.0001
 learning_rates =  [0.00001 + random.Random(x).random() * (0.001 - 0.00001) for x in range(3)]
 batch_sizes = [1 + random.Random(x + 1).random() * (37 - 1) for x in range(3)]
-epochs = [10, 50]
+#epochs = [10, 50]
 
 # What has currently been implemented:
 assert CNN_model_dimension == 2 or CNN_model_dimension == 3
@@ -76,8 +78,7 @@ if standardize_pixels_between_0_and_1:
 
 if evaluate_CNN:
 
-    score_df = pd.DataFrame()
-    score_df.columns = ['DATE', 'BATCH_SIZE', 'LEARNING_RATE', 'EPOCHS', 'MODEL_DIMENSIONS', 'MODEL_LAYERS', 'CV', 'SCORE']
+    score_df = pd.DataFrame(columns=['DATE', 'BATCH_SIZE', 'LEARNING_RATE', 'EPOCHS', 'MODEL_DIMENSIONS', 'MODEL_LAYERS', 'CV', 'SCORE'])
     # Extracting X and Y
     if CNN_model_dimension == 2:
         X, y = extracter.slices_train_and_test_cross_validation(DATASET)
@@ -87,6 +88,10 @@ if evaluate_CNN:
     # Perform each cross validation evaluation
     scores = []
     kf = KFold(n_splits=k_fold_validations, random_state=4, shuffle=True)
+
+    #Necessary for KFold
+    X = np.array(X)
+    y = np.array(y)
 
     for train_index, test_index in kf.split(X):
 
