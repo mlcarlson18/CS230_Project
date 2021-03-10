@@ -40,7 +40,7 @@ evaluate_UNET = False
 CNN_model_dimension = 3
 CNN_model_num_layers = 2
 batch_size = 24
-epochs = 25
+epoch = 25
 learning_rate = 0.0001
 learning_rates =  [0.00001 + random.Random(x).random() * (0.001 - 0.00001) for x in range(3)]
 batch_sizes = [1 + random.Random(x + 1).random() * (37 - 1) for x in range(3)]
@@ -84,42 +84,53 @@ if evaluate_CNN:
         X, y = extracter.slices_train_and_test_cross_validation(DATASET)
     elif CNN_model_dimension == 3:
         X, y = extracter.brain_train_and_test_cross_validation(DATASET)
-
-    # Perform each cross validation evaluation
-    scores = []
-    kf = KFold(n_splits=k_fold_validations, random_state=4, shuffle=True)
-
     #Necessary for KFold
     X = np.array(X)
     y = np.array(y)
 
-    for train_index, test_index in kf.split(X):
+    for epoch in epochs:
+        for batch_size in batch_sizes:
+            for learning_rate in learning_rates:
+                # Perform each cross validation evaluation
+                scores = []
+                kf = KFold(n_splits=k_fold_validations, random_state=4, shuffle=True)
 
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
+                #Necessary for KFold
+                X = np.array(X)
+                y = np.array(y)
 
-        X_train = np.array(X_train)
-        y_train = np.array(y_train)
-        X_test = np.array(X_test)
-        y_test = np.array(y_test)
+                for train_index, test_index in kf.split(X):
 
-        if CNN_model_dimension == 2:
-            X_train = X_train.reshape(-1, *X_train.shape[-3:])
-            y_train = y_train.reshape(-1, *y_train.shape[-2:])
-            X_test = X_test.reshape(-1, *X_test.shape[-3:])
-            y_test = y_test.reshape(-1, *y_test.shape[-2:])
+                    X_train, X_test = X[train_index], X[test_index]
+                    y_train, y_test = y[train_index], y[test_index]
 
-        CNN_modeler = CNN_models(CNN_model_dimension, CNN_model_num_layers)
-        score = CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
-        scores.append(score)
+                    X_train = np.array(X_train)
+                    y_train = np.array(y_train)
+                    X_test = np.array(X_test)
+                    y_test = np.array(y_test)
 
-    result = np.mean(scores)
-    #     score_key = "DATE: " + str(today) + "\nBATCH SIZE: " + str(batch_size) + "\nEPOCHS: " + str(epochs) +
-    #     "\nLEARNING RATE: " + str(learning_rate) + "\nDIMENSIONS: " + str(CNN_model_dimension) + "\nLAYERS: " +
-    #     str(CNN_model_num_layers) + "\nCROSS VALIDATIONS: " + str(k_fold_validations) + "\nSCORE: " + str(np.mean(scores))
-    df = pd.DataFrame([today, batch_size, epochs, learning_rate, CNN_model_dimension, CNN_model_num_layers, k_fold_validations, result])
-    score_df.append(df)
-    print(score_key)
+                    if CNN_model_dimension == 2:
+                        X_train = X_train.reshape(-1, *X_train.shape[-3:])
+                        y_train = y_train.reshape(-1, *y_train.shape[-2:])
+                        X_test = X_test.reshape(-1, *X_test.shape[-3:])
+                        y_test = y_test.reshape(-1, *y_test.shape[-2:])
+
+                    CNN_modeler = CNN_models(CNN_model_dimension, CNN_model_num_layers)
+                    score = CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epoch, batch_size = batch_size, learning_rate = learning_rate)
+                    scores.append(score)
+
+                result = np.mean(scores)
+                score_key = "DATE: " + str(today) + "\nBATCH SIZE: " + str(batch_size) + "\nEPOCHS: " + str(epochs) +
+                "\nLEARNING RATE: " + str(learning_rate) + "\nDIMENSIONS: " + str(CNN_model_dimension) + "\nLAYERS: " +
+                str(CNN_model_num_layers) + "\nCROSS VALIDATIONS: " + str(k_fold_validations) + "\nSCORE: " + str(result)
+                df = pd.DataFrame([today, batch_size, epochs, learning_rate, CNN_model_dimension, CNN_model_num_layers, k_fold_validations, result])
+                score_df.append(df, ignore_index=True)
+                print(score_key)
+
+    # Random save file to ensure uniqueness
+    save_key = int(random.Random().random() * 1000000)
+    save_file = "results" + str(save_key) + ".tsv"
+    score_df.to_csv(save_file, sep='\t')
 
 
 elif evaluate_UNET:

@@ -161,7 +161,7 @@ class CNN_models():
         return model
 
     # Train - Test - and Visualize the CNN output
-    def evaluate_CNN(self, X_train, y_train, X_test, y_test, epochs=500, batch_size=24, learning_rate=0.001):
+    def evaluate_CNN(self, X_train, y_train, X_test, y_test, epochs=500, batch_size=24, learning_rate=0.001, visualize=False):
         if self.unet:
             model = self.model_unet()
         if self.d == 2:
@@ -179,21 +179,23 @@ class CNN_models():
 
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
         score = model.evaluate(X_test, y_test)
-        print("SCORE: ", score)
-        output = model.predict(X_test)
-        print("OUTPUT SHAPE: ", output.shape)
-        print("MODEL PREDICTION")
 
-        if self.d == 2:
-            self.visualize_CNN_output(output, "MODEL PREDICTION")
-            print("Expected:")
-            self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
-        elif self.d == 3:
-            output = output.reshape(24, 128, 128)
-            self.visualize_CNN_output(output, "MODEL PREDICTION")
-            print("Expected:")
-            y_test = y_test.reshape(24, 128, 128)
-            self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
+        if visualize:
+            print("SCORE: ", score)
+            output = model.predict(X_test)
+            print("OUTPUT SHAPE: ", output.shape)
+            print("MODEL PREDICTION")
+
+            if self.d == 2:
+                self.visualize_CNN_output(output, "MODEL PREDICTION")
+                print("Expected:")
+                self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
+            elif self.d == 3:
+                output = output.reshape(24, 128, 128)
+                self.visualize_CNN_output(output, "MODEL PREDICTION")
+                print("Expected:")
+                y_test = y_test.reshape(24, 128, 128)
+                self.visualize_CNN_output(y_test, "RAPID OBSERVED RESULT")
 
         return score
 
