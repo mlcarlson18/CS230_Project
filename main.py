@@ -15,6 +15,9 @@ from DCM_Structure import DCM, DCM_DATABASE
 from preprocessing import preprocessing
 from CNN_models import CNN_models
 from directory_manipulation import directory_operator
+from datetime import date
+
+today = date.today()
 
 ############################# HYPER-PARAMETERS!!!!!!!! ##################################
 
@@ -37,6 +40,9 @@ CNN_model_num_layers = 2
 batch_size = 24
 epochs = 25
 learning_rate = 0.0001
+learning_rates =  [0.00001 + np.Random(x).random() * (0.001 - 0.00001) for x in range(3)]
+batch_sizes = [1 + np.Random(x + 1).random() * (37 - 1) for x in range(3)]
+epochs = [10, 50]
 
 # What has currently been implemented:
 assert CNN_model_dimension == 2 or CNN_model_dimension == 3
@@ -44,6 +50,9 @@ assert CNN_model_num_layers == 1 or CNN_model_num_layers == 2
 
 train_set_size = 0.67 # Not being implemented currently (always leaves one out for test)
 k_fold_validations = 8
+
+# If true, will save results to file for every run
+save_results = True
 ##################################################################################################
 
 # Import auxiliary Classes
@@ -67,6 +76,8 @@ if standardize_pixels_between_0_and_1:
 
 if evaluate_CNN:
 
+    score_df = pd.DataFrame()
+    score_df.columns = ['DATE', 'BATCH_SIZE', 'LEARNING_RATE', 'EPOCHS', 'MODEL_DIMENSIONS', 'MODEL_LAYERS', 'CV', 'SCORE']
     # Extracting X and Y
     if CNN_model_dimension == 2:
         X, y = extracter.slices_train_and_test_cross_validation(DATASET)
@@ -97,8 +108,14 @@ if evaluate_CNN:
         score = CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
         scores.append(score)
 
-    print(scores)
-    print("Overall Score: ", np.mean(scores))
+    result = np.mean(scores)
+    #     score_key = "DATE: " + str(today) + "\nBATCH SIZE: " + str(batch_size) + "\nEPOCHS: " + str(epochs) +
+    #     "\nLEARNING RATE: " + str(learning_rate) + "\nDIMENSIONS: " + str(CNN_model_dimension) + "\nLAYERS: " +
+    #     str(CNN_model_num_layers) + "\nCROSS VALIDATIONS: " + str(k_fold_validations) + "\nSCORE: " + str(np.mean(scores))
+    df = pd.DataFrame([today, batch_size, epochs, learning_rate, CNN_model_dimension, CNN_model_num_layers, k_fold_validations, result])
+    score_df.append(df)
+    print(score_key)
+
 
 elif evaluate_UNET:
     CNN_modeler = CNN_models(0, 0, unet=True)
