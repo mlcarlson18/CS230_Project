@@ -43,7 +43,7 @@ batch_size = 24
 epoch = 25
 learning_rate = 0.0001
 learning_rates =  [0.00001 + random.Random(x).random() * (0.001 - 0.00001) for x in range(3)]
-batch_sizes = [1 + random.Random(x + 1).random() * (37 - 1) for x in range(3)]
+batch_sizes = [int(1 + random.Random(x + 1).random() * (37 - 1) ) for x in range(3)]
 epochs = [10, 50]
 
 # What has currently been implemented:
