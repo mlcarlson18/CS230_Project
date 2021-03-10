@@ -44,7 +44,7 @@ epoch = 25
 learning_rate = 0.0001
 learning_rates =  [0.00001 + random.Random(x).random() * (0.001 - 0.00001) for x in range(3)]
 batch_sizes = [1 + random.Random(x + 1).random() * (37 - 1) for x in range(3)]
-#epochs = [10, 50]
+epochs = [10, 50]
 
 # What has currently been implemented:
 assert CNN_model_dimension == 2 or CNN_model_dimension == 3
@@ -120,9 +120,7 @@ if evaluate_CNN:
                     scores.append(score)
 
                 result = np.mean(scores)
-                score_key = "DATE: " + str(today) + "\nBATCH SIZE: " + str(batch_size) + "\nEPOCHS: " + str(epochs) +
-                "\nLEARNING RATE: " + str(learning_rate) + "\nDIMENSIONS: " + str(CNN_model_dimension) + "\nLAYERS: " +
-                str(CNN_model_num_layers) + "\nCROSS VALIDATIONS: " + str(k_fold_validations) + "\nSCORE: " + str(result)
+                score_key = "DATE: " + str(today) + "\nBATCH SIZE: " + str(batch_size) + "\nEPOCHS: " + str(epochs) +"\nLEARNING RATE: " + str(learning_rate) + "\nDIMENSIONS: " + str(CNN_model_dimension) + "\nLAYERS: " + str(CNN_model_num_layers) + "\nCROSS VALIDATIONS: " + str(k_fold_validations) + "\nSCORE: " + str(result)
                 df = pd.DataFrame([today, batch_size, epochs, learning_rate, CNN_model_dimension, CNN_model_num_layers, k_fold_validations, result])
                 score_df.append(df, ignore_index=True)
                 print(score_key)

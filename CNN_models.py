@@ -212,15 +212,6 @@ class CNN_models():
 
         plt.show()
 
-    def grid_search(self, X, y, learning_rates, epochs, batch_sizes):
-        scores = dict()
-        for lr in learning_rates:
-            for e in epochs:
-                for bc in batch_sizes:
-                    scores[str(lr) + ":" + str(e) + ":" + str(bc)] = self.evalute_CNN(X, y, e, bc, lr)
-        print(scores)
-        return scores
-
     def dice_coef(self,y_true, y_pred):
         smooth=1
         y_true_f = K.flatten(y_true)
