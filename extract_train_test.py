@@ -13,7 +13,7 @@ class extract_train_test:
 
     def __init__(self):
         self.mode = 1
-        self.nan_pixel_value = 500
+        self.nan_pixel_value = 0
 
     # Convert the DICOM Pixel Data to Numpy Array while Fixing NAN
     def convert_pixel_array_to_numpy(self, x):
@@ -25,7 +25,7 @@ class extract_train_test:
                 np_i = np.asarray(i).astype(np.float32)
 
                 # Isolate value to replace NaN with
-                self.nan_pixel_value = np.nanmax(np_i.copy().flatten()) if np.nanmax(np_i.copy().flatten()) > self.nan_pixel_value else self.nan_pixel_value
+                #self.nan_pixel_value = np.nanmax(np_i.copy().flatten()) if np.nanmax(np_i.copy().flatten()) > self.nan_pixel_value else self.nan_pixel_value
                 i_fixed = np.nan_to_num(np_i,
                                             nan=self.nan_pixel_value)
 
