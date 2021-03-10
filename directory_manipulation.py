@@ -84,7 +84,7 @@ class directory_operator:
             counter += 1
 
         # Ensuring each folder has correct number of image files
-        if (rapid and len(dcm_objects) != 24) or (rapid == False and len(dcm_objects != 1440)):
+        if (rapid and len(dcm_objects) != 24) or (rapid == False and len(dcm_objects) != 1440):
             print("Problem with number of files in data folder: ", folder_name, " ", len(dcm_objects))
             return None
 

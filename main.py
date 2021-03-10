@@ -10,7 +10,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from extract_train_test import extract_train_test
-
+import random
 from DCM_Structure import DCM, DCM_DATABASE
 from preprocessing import preprocessing
 from CNN_models import CNN_models
@@ -40,8 +40,8 @@ CNN_model_num_layers = 2
 batch_size = 24
 epochs = 25
 learning_rate = 0.0001
-learning_rates =  [0.00001 + np.Random(x).random() * (0.001 - 0.00001) for x in range(3)]
-batch_sizes = [1 + np.Random(x + 1).random() * (37 - 1) for x in range(3)]
+learning_rates =  [0.00001 + random.Random(x).random() * (0.001 - 0.00001) for x in range(3)]
+batch_sizes = [1 + random.Random(x + 1).random() * (37 - 1) for x in range(3)]
 epochs = [10, 50]
 
 # What has currently been implemented:
