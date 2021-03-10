@@ -43,6 +43,7 @@ assert CNN_model_dimension == 2 or CNN_model_dimension == 3
 assert CNN_model_num_layers == 1 or CNN_model_num_layers == 2
 
 train_set_size = 0.67 # Not being implemented currently (always leaves one out for test)
+k_fold_validations = 8
 ##################################################################################################
 
 # Import auxiliary Classes
@@ -65,18 +66,39 @@ if standardize_pixels_between_0_and_1:
     DATASET.standardize()
 
 if evaluate_CNN:
-    # Initiate CNN Class with Desired Layers and Dimension
-    CNN_modeler = CNN_models(CNN_model_dimension, CNN_model_num_layers)
-    print("Extracting X and Y For CNNs")
 
-    # Divide Dataset into slices or entire brains
+    # Extracting X and Y
     if CNN_model_dimension == 2:
-        X_train, y_train, X_test, y_test = extracter.slices_train_and_test(DATASET, train_set_size = train_set_size)
+        X, y = extracter.slices_train_and_test_cross_validation(DATASET)
     elif CNN_model_dimension == 3:
-        X_train, y_train, X_test, y_test = extracter.brain_train_and_test(DATASET)
+        X, y = extracter.brain_train_and_test_cross_validation(DATASET)
 
-    # Evaluate CNN
-    CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
+    # Perform each cross validation evaluation
+    scores = []
+    kf = KFold(n_splits=k_fold_validations, random_state=4, shuffle=True)
+
+    for train_index, test_index in kf.split(X):
+
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        X_test = np.array(X_test)
+        y_test = np.array(y_test)
+
+        if CNN_model_dimension == 2:
+            X_train = X_train.reshape(-1, *X_train.shape[-3:])
+            y_train = y_train.reshape(-1, *y_train.shape[-2:])
+            X_test = X_test.reshape(-1, *X_test.shape[-3:])
+            y_test = y_test.reshape(-1, *y_test.shape[-2:])
+
+        CNN_modeler = CNN_models(CNN_model_dimension, CNN_model_num_layers)
+        score = CNN_modeler.evaluate_CNN(X_train, y_train, X_test, y_test, epochs = epochs, batch_size = batch_size, learning_rate = learning_rate)
+        scores.append(score)
+
+    print(scores)
+    print("Overall Score: ", np.mean(scores))
 
 elif evaluate_UNET:
     CNN_modeler = CNN_models(0, 0, unet=True)

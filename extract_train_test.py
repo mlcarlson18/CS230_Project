@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import random
 import sklearn
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 from numpy import moveaxis
 
 
@@ -64,6 +65,17 @@ class extract_train_test:
 
         return (X_train, y_train, X_test, y_test)
 
+    def brain_train_and_test_cross_validation(self, DATASET):
+        X = list()
+        y = list()
+        for c in DATASET.Controls:
+            r = DATASET.Rapids_per_Controls[c]
+            ex, why = self.return_train_and_test_by_slice(c, r, DATASET.max_pixel_value)
+            X.append(ex)
+            y.append(why)
+
+        return X, y
+
     def slices_train_and_test(self, DATASET, train_set_size):
         X = list()
         y = list()
@@ -97,6 +109,18 @@ class extract_train_test:
         print("Y_test Shape: ", y_test.shape)
 
         return (X_train, y_train, X_test, y_test)
+
+
+    def slices_train_and_test_cross_validation(self, DATASET):
+        X = list()
+        y = list()
+        for c in DATASET.Controls:
+            r = DATASET.Rapids_per_Controls[c]
+            ex, why = self.return_train_and_test_by_slice(c, r, DATASET.max_pixel_value)
+            X.append(ex)
+            y.append(why)
+
+        return X, y
 
     def pixels_train_and_test(self, DATASET, train_set_size):
         X = list()
