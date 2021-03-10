@@ -19,9 +19,15 @@ class directory_operator:
         databases = list()
         for f in folders:
             if "TMAX" in f:
-                databases.append(self.create_database(self.traverse_directory(f), f, rapid=True))
+                try:
+                    databases.append(self.create_database(self.traverse_directory(f), f, rapid=True))
+                except Exception:
+                    print("Error thrown - not appending this folder")
             else:
-                databases.append(self.create_database(self.traverse_directory(f), f))
+                try:
+                    databases.append(self.create_database(self.traverse_directory(f), f))
+                except Exception:
+                    print("Error thrown - not appending this folder")
         return self.create_dataset(databases)
 
     def traverse_group(self, dir):
@@ -86,7 +92,7 @@ class directory_operator:
         # Ensuring each folder has correct number of image files
         if (rapid and len(dcm_objects) != 24) or (rapid == False and len(dcm_objects) != 1440):
             print("Problem with number of files in data folder: ", folder_name, " ", len(dcm_objects))
-            return None
+            assert False
 
         # Create Database with dcm DCM_objects
         d = DCM_DATABASE(dcm_objects, folder_name)
