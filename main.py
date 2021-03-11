@@ -43,7 +43,7 @@ batch_size = 24
 epoch = 25
 learning_rate = 0.0001
 learning_rates =  [0.00001 + random.Random(x).random() * (0.001 - 0.00001) for x in range(3)]
-batch_sizes = [int(1 + random.Random(x + 1).random() * (37 - 1) ) for x in range(3)]
+batch_sizes = [int(1 + random.Random(x + 1).random() * (44 - 1) ) for x in range(3)]
 epochs = [10, 50]
 
 # What has currently been implemented:
@@ -120,14 +120,13 @@ if evaluate_CNN:
                     scores.append(score)
 
                 result = np.mean(scores)
-                score_key = "DATE: " + str(today) + "\nBATCH SIZE: " + str(batch_size) + "\nEPOCHS: " + str(epochs) +"\nLEARNING RATE: " + str(learning_rate) + "\nDIMENSIONS: " + str(CNN_model_dimension) + "\nLAYERS: " + str(CNN_model_num_layers) + "\nCROSS VALIDATIONS: " + str(k_fold_validations) + "\nSCORE: " + str(result)
-                df = pd.DataFrame([today, batch_size, epochs, learning_rate, CNN_model_dimension, CNN_model_num_layers, k_fold_validations, result])
-                score_df.append(df, ignore_index=True)
+                score_key = "DATE: " + str(today) + "\nBATCH SIZE: " + str(batch_size) + "\nEPOCHS: " + str(epoch) +"\nLEARNING RATE: " + str(learning_rate) + "\nDIMENSIONS: " + str(CNN_model_dimension) + "\nLAYERS: " + str(CNN_model_num_layers) + "\nCROSS VALIDATIONS: " + str(k_fold_validations) + "\nSCORE: " + str(result)
+                score_df = score_df.append({'DATE': today, 'BATCH_SIZE': batch_size, 'LEARNING_RATE': learning_rate, 'EPOCHS': epoch, 'MODEL_DIMENSIONS': CNN_model_dimension, 'MODEL_LAYERS': CNN_model_num_layers, 'CV': k_fold_validations, 'SCORE': str(result)}, ignore_index=True)
                 print(score_key)
 
     # Random save file to ensure uniqueness
     save_key = int(random.Random().random() * 1000000)
-    save_file = "results" + str(save_key) + ".tsv"
+    save_file = "Results/results" + str(save_key) + ".tsv"
     score_df.to_csv(save_file, sep='\t')
 
 
